@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Lắc Lắc",
+    "slug": "lac-lac",
+    "scheme": "laclac",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {},
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
