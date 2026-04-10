@@ -1,15 +1,15 @@
-# Lắc Lắc
+# Lắc Lắc - "Lắc một cái, ra món ngay"
 
-Lắc một cái — biết ngay ăn gì!
+Lắc Lắc là một hệ sinh thái ứng dụng (Web, Mobile, Admin) giúp định hướng người dùng giải quyết bài toán "Hôm nay ăn gì?" một cách nhanh chóng và tự nhiên. Dành cho những ai phải đau đầu tranh luận hay cân nhắc để chọn món ăn mỗi ngày, dự án mang đến trải nghiệm "Lắc" (Shake) trực quan cùng thao tác "Quẹt" (Swipe) thẻ để ngay lập tức đề xuất món ăn phù hợp theo ngân sách, loại bữa và khẩu vị mà không cần thao tác dườm rà.
 
-Monorepo đa nền tảng cho ứng dụng Lắc Lắc, tập trung vào trải nghiệm chọn món nhanh (shake + swipe) và thu thập dữ liệu hành vi để chuẩn bị cho recommendation AI ở v3.
+Mục tiêu dài hạn là xây dựng thói quen người dùng ở bản v1 và sử dụng AI để cá nhân hóa hoàn toàn đề xuất món ăn ở bản v3.
 
 ## Định hướng v1
 
-- Không dùng GPS, bản đồ hoặc định vị người dùng.
-- Không dùng AI recommendation ở v1.
-- Có đầy đủ dữ liệu thô user_actions để phục vụ AI ở v3.
-- Thương hiệu Lắc Lắc được dùng thống nhất ở các phần hiển thị.
+- **Không dùng GPS hay bản đồ:** Giữ cho flow đơn giản, người dùng chỉ cần filter món ăn mà không bị làm phiền bởi các yếu tố vị trí.
+- **Microservices & Monorepo:** Tận dụng công nghệ hiện đại giúp đảm bảo tính linh hoạt, tái sử dụng cao và độ ổn định khi mở rộng.
+- **Không AI Recommendation v1:** Thay vì tích hợp AI sớm, hệ thống tập trung hoàn thiện core (logic Backend, thiết kế Mobile, Web mượt mà) và ghi nhận toàn bộ "user actions" làm dữ liệu gốc phục vụ cho model AI sau này.
+- **Thương hiệu Lắc Lắc:** Hệ thống nhận diện xuyên suốt từ website, mobile app tới dashboard của ban quản trị.
 
 ## Kiến trúc
 
@@ -126,20 +126,24 @@ docker compose -f docker-compose.dev.yml up -d
 
 ## Chạy local từng phần
 
-Backend services:
+Backend services (khởi chạy toàn bộ services cùng lúc):
+
+```bash
+corepack pnpm turbo run dev --filter=auth-service --filter=food-service --filter=action-service --filter=rec-service --filter=media-service
+```
+
+Hoặc chạy lẻ từng service:
 
 ```bash
 corepack pnpm --filter auth-service dev
 corepack pnpm --filter food-service dev
 corepack pnpm --filter action-service dev
-corepack pnpm --filter rec-service dev
-corepack pnpm --filter media-service dev
 ```
 
 Apps:
 
 ```bash
-corepack pnpm --filter mobile-app start
+corepack pnpm --filter mobile-app dev
 corepack pnpm --filter web-app dev
 corepack pnpm --filter admin-app dev
 ```
@@ -148,6 +152,12 @@ Chạy nhanh mobile + APIs cần thiết (khuyến nghị để tránh lag do th
 
 ```bash
 corepack pnpm dev:mobile
+```
+
+Chạy nhanh web + APIs cần thiết:
+
+```bash
+corepack pnpm dev:web
 ```
 
 ## Seed dữ liệu 89 món
@@ -192,3 +202,9 @@ corepack pnpm --filter media-service build
 - Action logging không chặn UI (queue BullMQ)
 - user_actions giữ raw data, không xóa, không aggregate ghi đè
 - popularityScore = swipe_right*2 + view_detail*1 + favorite_add*3 + review_submit*4
+
+## License
+
+Copyright (c) 2024 Lắc Lắc. All rights reserved.
+
+This source code is licensed under a proprietary license. You may not copy, modify, distribute, or use this code without explicit permission from the author(s).
