@@ -3,10 +3,10 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY packages ./packages
 COPY services/auth-service ./services/auth-service
-RUN pnpm install --frozen-lockfile=false --filter @lac-lac/shared-types --filter auth-service
+RUN pnpm install --frozen-lockfile --filter @lac-lac/shared-types --filter auth-service
 
 FROM deps AS build
 RUN pnpm --filter @lac-lac/shared-types build

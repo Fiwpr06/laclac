@@ -9,6 +9,15 @@ class FilterSnapshot {
   priceRange?: string;
 
   @Prop()
+  budgetBucket?: string;
+
+  @Prop()
+  dishType?: string;
+
+  @Prop()
+  cuisineType?: string;
+
+  @Prop()
   mealType?: string;
 
   @Prop()
@@ -57,6 +66,9 @@ export class UserAction {
     default: 'none',
   })
   context!: 'solo' | 'date' | 'group' | 'travel' | 'office' | 'none';
+
+  @Prop({ type: String, enum: ['shake', 'button'] })
+  triggerType?: 'shake' | 'button';
 
   @Prop({ type: FilterSnapshot, default: {} })
   filterSnapshot!: FilterSnapshot;

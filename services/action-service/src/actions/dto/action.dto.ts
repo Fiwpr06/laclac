@@ -23,12 +23,28 @@ const ACTION_TYPES = [
 
 const CONTEXTS = ['solo', 'date', 'group', 'travel', 'office', 'none'] as const;
 const DEVICES = ['mobile', 'web'] as const;
+const TRIGGER_TYPES = ['shake', 'button'] as const;
 
 class FilterSnapshotDto {
   @ApiPropertyOptional({ enum: ['cheap', 'medium', 'expensive'] })
   @IsOptional()
   @IsString()
   priceRange?: string;
+
+  @ApiPropertyOptional({ enum: ['under_30k', 'from_30k_to_50k', 'from_50k_to_100k', 'over_100k'] })
+  @IsOptional()
+  @IsString()
+  budgetBucket?: string;
+
+  @ApiPropertyOptional({ enum: ['liquid', 'dry', 'fried_grilled'] })
+  @IsOptional()
+  @IsString()
+  dishType?: string;
+
+  @ApiPropertyOptional({ enum: ['vietnamese', 'asian', 'european'] })
+  @IsOptional()
+  @IsString()
+  cuisineType?: string;
 
   @ApiPropertyOptional({ enum: ['breakfast', 'lunch', 'dinner', 'snack'] })
   @IsOptional()
@@ -69,6 +85,11 @@ export class ActionDto {
   @ApiProperty({ enum: CONTEXTS, default: 'none' })
   @IsEnum(CONTEXTS)
   context!: (typeof CONTEXTS)[number];
+
+  @ApiPropertyOptional({ enum: TRIGGER_TYPES })
+  @IsOptional()
+  @IsEnum(TRIGGER_TYPES)
+  triggerType?: (typeof TRIGGER_TYPES)[number];
 
   @ApiPropertyOptional({ type: FilterSnapshotDto })
   @IsOptional()

@@ -40,7 +40,7 @@ async function bootstrap() {
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs/food', app, swaggerDoc);
 
-  const port = Number(process.env['PORT'] ?? 3002);
+  const port = Number(process.env['FOOD_SERVICE_PORT'] ?? process.env['PORT'] ?? 3002);
   await app.listen(port);
 }
 

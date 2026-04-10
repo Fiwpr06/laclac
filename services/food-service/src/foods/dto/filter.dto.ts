@@ -3,6 +3,9 @@ import { Transform, Type } from 'class-transformer';
 import { IsArray, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 const PRICE_RANGES = ['cheap', 'medium', 'expensive'] as const;
+const BUDGET_BUCKETS = ['under_30k', 'from_30k_to_50k', 'from_50k_to_100k', 'over_100k'] as const;
+const DISH_TYPES = ['liquid', 'dry', 'fried_grilled'] as const;
+const CUISINE_TYPES = ['vietnamese', 'asian', 'european'] as const;
 const MEAL_TYPES = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 const DIET_TAGS = ['vegetarian', 'vegan', 'keto', 'clean'] as const;
 const COOKING_STYLES = ['soup', 'dry', 'fried', 'grilled', 'raw', 'steamed'] as const;
@@ -13,6 +16,21 @@ export class FilterDto {
   @IsOptional()
   @IsEnum(PRICE_RANGES)
   priceRange?: (typeof PRICE_RANGES)[number];
+
+  @ApiPropertyOptional({ enum: BUDGET_BUCKETS })
+  @IsOptional()
+  @IsEnum(BUDGET_BUCKETS)
+  budgetBucket?: (typeof BUDGET_BUCKETS)[number];
+
+  @ApiPropertyOptional({ enum: DISH_TYPES })
+  @IsOptional()
+  @IsEnum(DISH_TYPES)
+  dishType?: (typeof DISH_TYPES)[number];
+
+  @ApiPropertyOptional({ enum: CUISINE_TYPES })
+  @IsOptional()
+  @IsEnum(CUISINE_TYPES)
+  cuisineType?: (typeof CUISINE_TYPES)[number];
 
   @ApiPropertyOptional()
   @IsOptional()

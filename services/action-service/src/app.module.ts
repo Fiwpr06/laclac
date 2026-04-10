@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
@@ -9,7 +11,14 @@ import { ActionsModule } from './actions/actions.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: [
+        path.resolve(process.cwd(), '.env'),
+        path.resolve(process.cwd(), '../../.env'),
+        path.resolve(__dirname, '../../../.env'),
+      ],
+    }),
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([
       {

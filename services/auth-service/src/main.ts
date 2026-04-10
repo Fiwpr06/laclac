@@ -40,7 +40,7 @@ async function bootstrap() {
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs/auth', app, swaggerDoc);
 
-  const port = Number(process.env['PORT'] ?? 3001);
+  const port = Number(process.env['AUTH_SERVICE_PORT'] ?? process.env['PORT'] ?? 3001);
   await app.listen(port);
 }
 

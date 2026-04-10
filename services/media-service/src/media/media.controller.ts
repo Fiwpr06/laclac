@@ -10,9 +10,9 @@ export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
   @Post('upload')
-  @ApiOperation({ summary: 'Upload image len cloudinary' })
+  @ApiOperation({ summary: 'Upload ảnh lên Cloudinary' })
   async upload(@Body() dto: UploadDto) {
     const data = await this.mediaService.upload(dto);
-    return { success: true, data, message: 'Upload thanh cong' };
+    return { success: true, data, message: 'Upload thành công' };
   }
 }

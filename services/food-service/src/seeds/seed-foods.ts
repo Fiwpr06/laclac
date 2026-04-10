@@ -1,8 +1,26 @@
+import path from 'node:path';
+import fs from 'node:fs';
+
+import { v2 as cloudinary } from 'cloudinary';
+import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 import { Category, CategorySchema } from '../categories/category.schema';
 import { toSlug } from '../common/slug.util';
 import { Food, FoodSchema } from '../foods/food.schema';
+
+const envCandidates = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(process.cwd(), '../../.env'),
+  path.resolve(__dirname, '../../../../.env'),
+];
+
+for (const envPath of envCandidates) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    break;
+  }
+}
 
 type SeedFoodInput = {
   name: string;
@@ -21,6 +39,46 @@ type SeedFoodInput = {
   priceMin: number;
   priceMax: number;
 };
+
+type SeedImageSource = 'wikipedia' | 'fallback';
+
+type SeedImageResult = {
+  url: string;
+  source: SeedImageSource;
+};
+
+type MediaUploadResult = {
+  ok: boolean;
+  url?: string;
+  provider?: string;
+  error?: string;
+};
+
+type WikipediaSearchResponse = {
+  query?: {
+    search?: Array<{
+      title?: string;
+    }>;
+  };
+};
+
+type WikipediaSummaryResponse = {
+  originalimage?: {
+    source?: string;
+  };
+  thumbnail?: {
+    source?: string;
+  };
+};
+
+const WIKIPEDIA_HOSTS = ['vi.wikipedia.org', 'en.wikipedia.org'] as const;
+const WIKIPEDIA_FETCH_HEADERS = {
+  'User-Agent': 'LacLacImageBot/1.0 (+https://laclac.vn)',
+  'Accept-Language': 'vi,en-US;q=0.9,en;q=0.8',
+};
+const REMOTE_IMAGE_TIMEOUT_MS = 15_000;
+const MAX_REMOTE_IMAGE_BYTES = 10 * 1024 * 1024;
+const wikipediaImageCache = new Map<string, string | null>();
 
 const categorySeeds = [
   { name: 'Mon Viet', type: 'cuisine' as const, icon: 'restaurant-outline', sortOrder: 1 },
@@ -1804,16 +1862,428 @@ const extraFoods: SeedFoodInput[] = [
   }),
 ];
 
+const escapeSvgText = (value: string): string => {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+};
+
+const buildFallbackImageUrl = (nameSlug: string): string => {
+  const displayName = (nameSlug || 'mon-an-lac-lac').replace(/-/g, ' ').trim();
+  const safeDisplayName = escapeSvgText(displayName.slice(0, 40));
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff7ed"/><stop offset="1" stop-color="#ffedd5"/></linearGradient></defs><rect width="1200" height="800" fill="url(#bg)"/><text x="600" y="392" text-anchor="middle" fill="#9a3412" font-family="Arial, sans-serif" font-size="58" font-weight="700">Lac Lac</text><text x="600" y="462" text-anchor="middle" fill="#c2410c" font-family="Arial, sans-serif" font-size="36">${safeDisplayName}</text></svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+};
+
+const buildWikipediaSearchQueries = (dishName: string): string[] => {
+  return Array.from(
+    new Set([dishName, `${dishName} món ăn`, `${dishName} Việt Nam`, `${dishName} food`]),
+  );
+};
+
+const isHttpUrl = (value: string | null | undefined): value is string => {
+  if (!value) {
+    return false;
+  }
+
+  return /^https?:\/\//i.test(value.trim());
+};
+
+const sleep = (ms: number): Promise<void> =>
+  new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+
+const isRetriableUploadError = (error?: string): boolean => {
+  if (!error) {
+    return false;
+  }
+
+  const normalized = error.toLowerCase();
+  return (
+    normalized.includes('429') ||
+    normalized.includes('timeout') ||
+    normalized.includes('network') ||
+    normalized.includes('fetch failed')
+  );
+};
+
+const toCloudinaryPublicId = (assetName: string): string | undefined => {
+  const normalized = assetName
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s/_-]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 120);
+
+  return normalized || undefined;
+};
+
+const hasCloudinaryConfig = (): boolean => {
+  return (
+    !!process.env['CLOUDINARY_CLOUD_NAME'] &&
+    !!process.env['CLOUDINARY_API_KEY'] &&
+    !!process.env['CLOUDINARY_API_SECRET']
+  );
+};
+
+const toErrorMessage = (error: unknown, fallback: string): string => {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (error && typeof error === 'object' && 'message' in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+  }
+
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return fallback;
+  }
+};
+
+const fetchImageAsDataUrl = async (imageUrl: string): Promise<string> => {
+  const parsedUrl = new URL(imageUrl);
+  if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+    throw new Error('imageUrl must start with http or https');
+  }
+
+  const response = await fetch(parsedUrl.toString(), {
+    headers: {
+      Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+      'Accept-Language': 'vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7',
+      'Cache-Control': 'no-cache',
+      Pragma: 'no-cache',
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+    },
+    signal: AbortSignal.timeout(REMOTE_IMAGE_TIMEOUT_MS),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Cannot fetch image from URL (HTTP ${response.status})`);
+  }
+
+  const contentType = response.headers.get('content-type')?.split(';')[0]?.trim().toLowerCase();
+  if (!contentType || !contentType.startsWith('image/')) {
+    throw new Error('URL does not return valid image content');
+  }
+
+  const bytes = Buffer.from(await response.arrayBuffer());
+  if (bytes.length === 0) {
+    throw new Error('Image payload is empty');
+  }
+
+  if (bytes.length > MAX_REMOTE_IMAGE_BYTES) {
+    throw new Error('Image is larger than 10MB');
+  }
+
+  return `data:${contentType};base64,${bytes.toString('base64')}`;
+};
+
+const uploadDishImageDirectToCloudinary = async (
+  imageInput: string,
+  assetName: string,
+): Promise<MediaUploadResult> => {
+  if (!hasCloudinaryConfig()) {
+    return { ok: false, error: 'Missing CLOUDINARY_* configuration in environment' };
+  }
+
+  cloudinary.config({
+    cloud_name: process.env['CLOUDINARY_CLOUD_NAME'],
+    api_key: process.env['CLOUDINARY_API_KEY'],
+    api_secret: process.env['CLOUDINARY_API_SECRET'],
+  });
+
+  const publicId = toCloudinaryPublicId(assetName);
+  const uploadOptions = {
+    folder: 'lac-lac',
+    ...(publicId
+      ? {
+          public_id: publicId,
+          overwrite: true,
+          invalidate: true,
+          unique_filename: false,
+          use_filename: false,
+        }
+      : {}),
+    format: 'webp',
+    resource_type: 'image' as const,
+  };
+
+  try {
+    const uploaded = await cloudinary.uploader.upload(imageInput, uploadOptions);
+
+    return {
+      ok: true,
+      provider: 'cloudinary',
+      url: uploaded.secure_url,
+    };
+  } catch (firstError) {
+    if (!imageInput.startsWith('data:image/')) {
+      try {
+        const dataUrl = await fetchImageAsDataUrl(imageInput);
+        const uploaded = await cloudinary.uploader.upload(dataUrl, uploadOptions);
+        return {
+          ok: true,
+          provider: 'cloudinary',
+          url: uploaded.secure_url,
+        };
+      } catch (secondError) {
+        return {
+          ok: false,
+          error: combineUploadErrors(
+            toErrorMessage(firstError, 'Direct URL upload failed'),
+            toErrorMessage(secondError, 'Data URL upload failed'),
+          ),
+        };
+      }
+    }
+
+    return {
+      ok: false,
+      error: toErrorMessage(firstError, 'Unknown direct upload error'),
+    };
+  }
+};
+
+const combineUploadErrors = (firstError?: string, secondError?: string): string => {
+  const errors = [firstError, secondError].filter((value): value is string => !!value);
+  if (errors.length === 0) {
+    return 'Unknown upload error';
+  }
+
+  return errors.join(' | ');
+};
+
+const probeMediaService = async (mediaServiceUrl: string): Promise<boolean> => {
+  try {
+    const endpoint = new URL('/api/v1/media/upload', mediaServiceUrl);
+    const response = await fetch(endpoint.toString(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({}),
+      signal: AbortSignal.timeout(2_000),
+    });
+
+    // 400 is expected for empty payload but means service is reachable.
+    return response.status < 500;
+  } catch {
+    return false;
+  }
+};
+
+const fetchJson = async <T>(url: string): Promise<T | null> => {
+  try {
+    const response = await fetch(url, {
+      headers: WIKIPEDIA_FETCH_HEADERS,
+    });
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as T;
+  } catch {
+    return null;
+  }
+};
+
+const searchWikipediaTitle = async (
+  host: (typeof WIKIPEDIA_HOSTS)[number],
+  query: string,
+): Promise<string | null> => {
+  const url = new URL(`https://${host}/w/api.php`);
+  url.searchParams.set('action', 'query');
+  url.searchParams.set('list', 'search');
+  url.searchParams.set('format', 'json');
+  url.searchParams.set('utf8', '1');
+  url.searchParams.set('srlimit', '1');
+  url.searchParams.set('srsearch', query);
+
+  const response = await fetchJson<WikipediaSearchResponse>(url.toString());
+  const title = response?.query?.search?.[0]?.title?.trim();
+  return title || null;
+};
+
+const fetchWikipediaImageByTitle = async (
+  host: (typeof WIKIPEDIA_HOSTS)[number],
+  title: string,
+): Promise<string | null> => {
+  const summaryUrl = `https://${host}/api/rest_v1/page/summary/${encodeURIComponent(title)}`;
+  const summary = await fetchJson<WikipediaSummaryResponse>(summaryUrl);
+  const imageUrl = summary?.thumbnail?.source ?? summary?.originalimage?.source;
+
+  return isHttpUrl(imageUrl) ? imageUrl : null;
+};
+
+const resolveDishImageUrl = async (
+  dishName: string,
+  nameSlug: string,
+  autoFetchDishImages: boolean,
+): Promise<SeedImageResult> => {
+  const fallbackUrl = buildFallbackImageUrl(nameSlug);
+
+  if (!autoFetchDishImages) {
+    return { url: fallbackUrl, source: 'fallback' };
+  }
+
+  if (wikipediaImageCache.has(dishName)) {
+    const cached = wikipediaImageCache.get(dishName);
+    if (cached) {
+      return { url: cached, source: 'wikipedia' };
+    }
+
+    return { url: fallbackUrl, source: 'fallback' };
+  }
+
+  const queries = buildWikipediaSearchQueries(dishName);
+
+  for (const host of WIKIPEDIA_HOSTS) {
+    for (const query of queries) {
+      const title = await searchWikipediaTitle(host, query);
+      if (!title) {
+        continue;
+      }
+
+      const imageUrl = await fetchWikipediaImageByTitle(host, title);
+      if (imageUrl) {
+        wikipediaImageCache.set(dishName, imageUrl);
+        return { url: imageUrl, source: 'wikipedia' };
+      }
+    }
+  }
+
+  wikipediaImageCache.set(dishName, null);
+  return { url: fallbackUrl, source: 'fallback' };
+};
+
+const uploadDishImageToMediaService = async (
+  mediaServiceUrl: string,
+  imageInput: string,
+  assetName: string,
+): Promise<MediaUploadResult | null> => {
+  const endpoint = new URL('/api/v1/media/upload', mediaServiceUrl);
+  const body = imageInput.startsWith('data:image/')
+    ? { imageBase64: imageInput, assetName }
+    : { imageUrl: imageInput, assetName };
+
+  const maxAttempts = Number(process.env['CLOUDINARY_UPLOAD_RETRY_COUNT'] ?? 4);
+
+  let lastError = 'Unknown upload error';
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetch(endpoint.toString(), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (!response.ok) {
+        let message = `HTTP ${response.status}`;
+        try {
+          const errorPayload = (await response.json()) as { message?: string };
+          if (errorPayload?.message) {
+            message = errorPayload.message;
+          }
+        } catch {
+          // no-op
+        }
+
+        lastError = message;
+      } else {
+        const payload = (await response.json()) as {
+          data?: { url?: string; provider?: string };
+        };
+        const uploadedUrl = payload?.data?.url?.trim();
+        const provider = payload?.data?.provider?.trim().toLowerCase();
+
+        if (!isHttpUrl(uploadedUrl) || !provider) {
+          lastError = 'Invalid upload response payload';
+        } else {
+          return {
+            ok: true,
+            url: uploadedUrl,
+            provider,
+          };
+        }
+      }
+    } catch (error) {
+      lastError = error instanceof Error ? error.message : 'Unknown upload error';
+    }
+
+    if (!isRetriableUploadError(lastError) || attempt === maxAttempts) {
+      break;
+    }
+
+    const backoffMs = attempt * 1000;
+    await sleep(backoffMs);
+  }
+
+  return { ok: false, error: lastError };
+};
+
 const foods: SeedFoodInput[] = [...baseFoods, ...extraFoods];
 
 async function runSeed() {
   const mongoUri = process.env['MONGODB_URI'] ?? 'mongodb://localhost:27017/lac_lac';
+  const autoFetchDishImages = process.env['AUTO_FETCH_DISH_IMAGES'] !== 'false';
+  const autoUploadDishImages = process.env['AUTO_UPLOAD_DISH_IMAGES'] !== 'false';
+  const requireCloudinaryUpload = process.env['REQUIRE_CLOUDINARY_UPLOAD'] !== 'false';
+  const mediaServiceUrl = process.env['MEDIA_SERVICE_URL'] ?? 'http://localhost:3005';
+  const useMediaServiceUpload = process.env['USE_MEDIA_SERVICE_UPLOAD'] !== 'false';
+  const uploadDelayMs = Number(process.env['CLOUDINARY_UPLOAD_DELAY_MS'] ?? 250);
+
+  if (mongoUri.includes('<db>')) {
+    throw new Error('MONGODB_URI contains <db>. Replace it with your database name.');
+  }
+
+  if (requireCloudinaryUpload && !autoUploadDishImages) {
+    throw new Error('REQUIRE_CLOUDINARY_UPLOAD=true needs AUTO_UPLOAD_DISH_IMAGES=true.');
+  }
+
+  if (requireCloudinaryUpload && !hasCloudinaryConfig()) {
+    throw new Error('REQUIRE_CLOUDINARY_UPLOAD=true needs CLOUDINARY_* values in .env.');
+  }
+
   await mongoose.connect(mongoUri);
 
   const CategoryModel = mongoose.model(Category.name, CategorySchema);
   const FoodModel = mongoose.model(Food.name, FoodSchema);
 
   const categoryMap = new Map<string, mongoose.Types.ObjectId>();
+  let wikipediaImageCount = 0;
+  let fallbackImageCount = 0;
+  let uploadedImageCount = 0;
+  let canUseMediaServiceUpload = false;
+
+  if (autoUploadDishImages && useMediaServiceUpload) {
+    canUseMediaServiceUpload = await probeMediaService(mediaServiceUrl);
+
+    if (!canUseMediaServiceUpload) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        `Media service is not reachable at ${mediaServiceUrl}. Falling back to direct Cloudinary upload.`,
+      );
+    }
+  }
 
   for (const item of categorySeeds) {
     const category = await CategoryModel.findOneAndUpdate(
@@ -1834,7 +2304,60 @@ async function runSeed() {
 
     const dishName = normalizeDishName(normalizedItem.name);
     const nameSlug = toSlug(dishName);
-    const imageUrl = `https://res.cloudinary.com/demo/image/upload/lac-lac/${nameSlug}.webp`;
+    const imageResult = await resolveDishImageUrl(dishName, nameSlug, autoFetchDishImages);
+    let imageUrl = imageResult.url;
+
+    if (autoUploadDishImages) {
+      if (uploadDelayMs > 0) {
+        await sleep(uploadDelayMs);
+      }
+
+      let uploaded: MediaUploadResult | null = null;
+
+      if (canUseMediaServiceUpload) {
+        const viaService = await uploadDishImageToMediaService(
+          mediaServiceUrl,
+          imageResult.url,
+          dishName,
+        );
+
+        if (viaService?.ok && viaService.provider === 'cloudinary' && viaService.url) {
+          uploaded = viaService;
+        } else {
+          const serviceError = viaService?.error;
+          if ((serviceError ?? '').toLowerCase().includes('fetch failed')) {
+            canUseMediaServiceUpload = false;
+          }
+
+          const directUpload = await uploadDishImageDirectToCloudinary(imageResult.url, dishName);
+          if (directUpload.ok) {
+            uploaded = directUpload;
+          } else {
+            uploaded = {
+              ok: false,
+              error: combineUploadErrors(serviceError, directUpload.error),
+            };
+          }
+        }
+      } else {
+        uploaded = await uploadDishImageDirectToCloudinary(imageResult.url, dishName);
+      }
+
+      if (uploaded?.ok && uploaded.provider === 'cloudinary' && uploaded.url) {
+        imageUrl = uploaded.url;
+        uploadedImageCount += 1;
+      } else if (requireCloudinaryUpload) {
+        throw new Error(
+          `Cloudinary upload failed for dish: ${dishName}. Reason: ${uploaded?.error ?? 'Unknown error'}`,
+        );
+      }
+    }
+
+    if (imageResult.source === 'wikipedia') {
+      wikipediaImageCount += 1;
+    } else {
+      fallbackImageCount += 1;
+    }
 
     await FoodModel.findOneAndUpdate(
       { nameSlug },
@@ -1873,7 +2396,9 @@ async function runSeed() {
   }
 
   // eslint-disable-next-line no-console
-  console.log(`Seed completed with ${foods.length} foods.`);
+  console.log(
+    `Seed completed with ${foods.length} foods. images: wikipedia=${wikipediaImageCount}, fallback=${fallbackImageCount}, uploaded=${uploadedImageCount}`,
+  );
 
   await mongoose.connection.close();
 }

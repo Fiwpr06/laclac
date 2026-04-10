@@ -11,4 +11,9 @@ export class UploadDto {
   @IsOptional()
   @IsString()
   imageBase64?: string;
+
+  @ApiPropertyOptional({ description: 'Dish name or custom asset name for Cloudinary public_id' })
+  @IsOptional()
+  @IsString()
+  assetName?: string;
 }

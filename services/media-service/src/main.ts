@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -15,7 +16,15 @@ async function bootstrap() {
     transports: [new winston.transports.Console()],
   });
 
-  const app = await NestFactory.create(AppModule, { logger });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, { logger });
+
+  app.useBodyParser('json', {
+    limit: process.env['MEDIA_JSON_LIMIT'] ?? '15mb',
+  });
+  app.useBodyParser('urlencoded', {
+    extended: true,
+    limit: process.env['MEDIA_URLENCODED_LIMIT'] ?? '15mb',
+  });
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
@@ -39,7 +48,7 @@ async function bootstrap() {
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs/media', app, swaggerDoc);
 
-  const port = Number(process.env['PORT'] ?? 3005);
+  const port = Number(process.env['MEDIA_SERVICE_PORT'] ?? process.env['PORT'] ?? 3005);
   await app.listen(port);
 }
 

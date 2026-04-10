@@ -38,8 +38,12 @@ interface StoredAction {
     | 'favorite_remove'
     | 'review_submit';
   context: 'solo' | 'date' | 'group' | 'travel' | 'office' | 'none';
+  triggerType?: 'shake' | 'button';
   filterSnapshot: {
     priceRange?: string;
+    budgetBucket?: string;
+    dishType?: string;
+    cuisineType?: string;
     mealType?: string;
     dietTag?: string;
     category?: string;
@@ -65,6 +69,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
   private redis?: IORedis;
   private queue?: Queue<StoredAction>;
   private worker?: Worker<StoredAction>;
+  private redisWarned = false;
 
   constructor(
     private readonly configService: ConfigService,
@@ -78,9 +83,25 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
   async onModuleInit(): Promise<void> {
     const redisUrl = this.configService.get<string>('REDIS_URL', 'redis://localhost:6379');
 
+    if (!this.isRedisUrl(redisUrl)) {
+      this.logger.warn(
+        `REDIS_URL must start with redis:// or rediss://. Queue disabled, actions will be written directly to MongoDB.`,
+      );
+      return;
+    }
+
     this.redis = new IORedis(redisUrl, {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
+    });
+
+    this.redis.on('error', (error: Error) => {
+      if (!this.redisWarned) {
+        this.redisWarned = true;
+        this.logger.warn(
+          `Redis queue unavailable (${error.message}). Actions will fallback to direct MongoDB writes.`,
+        );
+      }
     });
 
     this.queue = new Queue<StoredAction>('user-actions', {
@@ -123,6 +144,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
       foodId: dto.foodId,
       actionType: dto.actionType,
       context: dto.context,
+      triggerType: dto.triggerType,
       filterSnapshot: dto.filterSnapshot ?? {},
       deviceType: dto.deviceType,
       sessionDurationMs: dto.sessionDurationMs,
@@ -133,15 +155,24 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
       return { accepted: true };
     }
 
-    await this.queue.add('log-action', payload, {
-      removeOnComplete: { count: 1000 },
-      removeOnFail: { count: 5000 },
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 500,
-      },
-    });
+    try {
+      await this.queue.add('log-action', payload, {
+        removeOnComplete: { count: 1000 },
+        removeOnFail: { count: 5000 },
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 500,
+        },
+      });
+    } catch (error) {
+      this.logger.warn(
+        `Queue add failed, writing action directly to MongoDB: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+      await this.persistAction(payload);
+    }
 
     return { accepted: true };
   }
@@ -405,6 +436,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
           : null,
       actionType: payload.actionType,
       context: payload.context,
+      triggerType: payload.triggerType,
       filterSnapshot: payload.filterSnapshot ?? {},
       deviceType: payload.deviceType,
       sessionDurationMs: payload.sessionDurationMs,
@@ -437,6 +469,10 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
         totalReviews: first?.totalReviews ?? 0,
       })
       .exec();
+  }
+
+  private isRedisUrl(value: string): boolean {
+    return /^rediss?:\/\//i.test(value);
   }
 
   private resolveSessionId(sessionId: string | undefined, userId: string): string {

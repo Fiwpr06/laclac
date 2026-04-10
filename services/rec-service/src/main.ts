@@ -39,7 +39,7 @@ async function bootstrap() {
   const swaggerDoc = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('api/docs/recommendations', app, swaggerDoc);
 
-  const port = Number(process.env['PORT'] ?? 3004);
+  const port = Number(process.env['REC_SERVICE_PORT'] ?? process.env['PORT'] ?? 3004);
   await app.listen(port);
 }
 

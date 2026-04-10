@@ -3,9 +3,9 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY services/media-service ./services/media-service
-RUN pnpm install --frozen-lockfile=false --filter media-service
+RUN pnpm install --frozen-lockfile --filter media-service
 
 FROM deps AS build
 RUN pnpm --filter media-service build

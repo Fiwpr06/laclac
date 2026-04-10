@@ -12,6 +12,7 @@ import { toSlug } from '../common/slug.util';
 import { applyContextRules } from './context-rules.util';
 import { CreateFoodDto, UpdateFoodDto } from './dto/create-food.dto';
 import { ContextRequestDto, FilterDto, FoodsQueryDto } from './dto/filter.dto';
+import { ShakeRequestDto } from './dto/shake.dto';
 import { Food, FoodDocument } from './food.schema';
 
 interface FoodsPageResult {
@@ -21,6 +22,21 @@ interface FoodsPageResult {
     limit: number;
     total: number;
     totalPages: number;
+  };
+}
+
+export interface ShakeResult {
+  sessionId: string;
+  triggerType: 'shake' | 'button';
+  food: unknown | null;
+  actionHint: {
+    sessionId: string;
+    foodId?: string;
+    actionType: 'shake_result';
+    context: 'solo' | 'date' | 'group' | 'travel' | 'office' | 'none';
+    triggerType: 'shake' | 'button';
+    filterSnapshot: Partial<FilterDto>;
+    deviceType: 'mobile' | 'web';
   };
 }
 
@@ -78,6 +94,27 @@ export class FoodsService {
       .aggregate([{ $match: match }, { $sample: { size: 1 } }])
       .exec();
     return result[0] ?? null;
+  }
+
+  async shake(dto: ShakeRequestDto): Promise<ShakeResult> {
+    const filters = dto.filters ?? {};
+    const food = await this.random(filters);
+    const foodId = this.resolveFoodId(food);
+
+    return {
+      sessionId: dto.sessionId,
+      triggerType: dto.triggerType,
+      food,
+      actionHint: {
+        sessionId: dto.sessionId,
+        foodId,
+        actionType: 'shake_result',
+        context: dto.context ?? 'none',
+        triggerType: dto.triggerType,
+        filterSnapshot: filters,
+        deviceType: dto.deviceType,
+      },
+    };
   }
 
   async swipeQueue(filters: FilterDto): Promise<unknown[]> {
@@ -216,9 +253,31 @@ export class FoodsService {
 
   private buildFilter(filters: Partial<FilterDto>): FilterQuery<FoodDocument> {
     const query: FilterQuery<FoodDocument> = { isActive: true };
+    const andConditions: FilterQuery<FoodDocument>[] = [];
 
     if (filters.priceRange) {
       query.priceRange = filters.priceRange;
+    }
+
+    if (filters.budgetBucket) {
+      switch (filters.budgetBucket) {
+        case 'under_30k':
+          andConditions.push({ priceMax: { $lte: 30000 } });
+          break;
+        case 'from_30k_to_50k':
+          andConditions.push({ priceMin: { $lte: 50000 } });
+          andConditions.push({ priceMax: { $gte: 30000 } });
+          break;
+        case 'from_50k_to_100k':
+          andConditions.push({ priceMin: { $lte: 100000 } });
+          andConditions.push({ priceMax: { $gte: 50000 } });
+          break;
+        case 'over_100k':
+          andConditions.push({
+            $or: [{ priceMin: { $gte: 100000 } }, { priceMax: { $gt: 100000 } }],
+          });
+          break;
+      }
     }
 
     if (filters.category) {
@@ -236,6 +295,36 @@ export class FoodsService {
       query.dietTags = filters.dietTag;
     }
 
+    if (filters.dishType && !filters.cookingStyle) {
+      if (filters.dishType === 'liquid') {
+        query.cookingStyle = 'soup';
+      }
+
+      if (filters.dishType === 'dry') {
+        query.cookingStyle = 'dry';
+      }
+
+      if (filters.dishType === 'fried_grilled') {
+        query.cookingStyle = { $in: ['fried', 'grilled'] };
+      }
+    }
+
+    if (filters.cuisineType) {
+      const cuisineRegexMap: Record<'vietnamese' | 'asian' | 'european', RegExp> = {
+        vietnamese: /viet|ha noi|hue|sai gon|mien/i,
+        asian: /asia|chau a|thai|nhat|han/i,
+        european: /europe|chau au|france|italy|germany/i,
+      };
+
+      const cuisineRegex = cuisineRegexMap[filters.cuisineType];
+      andConditions.push({
+        $or: [
+          { origin: { $regex: cuisineRegex } },
+          { tags: { $elemMatch: { $regex: cuisineRegex } } },
+        ],
+      });
+    }
+
     if (filters.cookingStyle) {
       query.cookingStyle = filters.cookingStyle;
     }
@@ -248,6 +337,23 @@ export class FoodsService {
       query.allergens = { $nin: filters.allergenExclude };
     }
 
+    if (andConditions.length > 0) {
+      query.$and = andConditions;
+    }
+
     return query;
+  }
+
+  private resolveFoodId(food: unknown): string | undefined {
+    if (!food || typeof food !== 'object') {
+      return undefined;
+    }
+
+    const candidate = food as { _id?: unknown };
+    if (candidate._id === undefined || candidate._id === null) {
+      return undefined;
+    }
+
+    return String(candidate._id);
   }
 }

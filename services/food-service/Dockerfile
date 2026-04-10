@@ -3,10 +3,10 @@ WORKDIR /app
 RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-workspace.yaml turbo.json tsconfig.base.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json tsconfig.base.json ./
 COPY packages ./packages
 COPY services/food-service ./services/food-service
-RUN pnpm install --frozen-lockfile=false --filter @lac-lac/shared-types --filter food-service
+RUN pnpm install --frozen-lockfile --filter @lac-lac/shared-types --filter food-service
 
 FROM deps AS build
 RUN pnpm --filter @lac-lac/shared-types build
