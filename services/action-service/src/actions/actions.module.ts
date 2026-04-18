@@ -10,6 +10,7 @@ import { ActionsService } from './actions.service';
 import { Favorite, FavoriteSchema } from './schemas/favorite.schema';
 import { Food, FoodSchema } from './schemas/food.schema';
 import { Review, ReviewSchema } from './schemas/review.schema';
+import { ShakeHistory, ShakeHistorySchema } from './schemas/shake-history.schema';
 import { User, UserSchema } from './schemas/user.schema';
 import { UserAction, UserActionSchema } from './schemas/user-action.schema';
 
@@ -23,6 +24,7 @@ import { UserAction, UserActionSchema } from './schemas/user-action.schema';
       { name: Review.name, schema: ReviewSchema },
       { name: User.name, schema: UserSchema },
       { name: Food.name, schema: FoodSchema },
+      { name: ShakeHistory.name, schema: ShakeHistorySchema },
     ]),
   ],
   controllers: [ActionsController],

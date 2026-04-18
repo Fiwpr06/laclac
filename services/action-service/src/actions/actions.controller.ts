@@ -16,6 +16,7 @@ import { CurrentUser } from '../common/current-user.decorator';
 import { JwtAuthGuard } from '../common/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../common/optional-jwt-auth.guard';
 import { RequestUser } from '../common/request-user.interface';
+import { AddHistoryDto } from './dto/add-history.dto';
 import { ActionDto } from './dto/action.dto';
 import { FavoriteDto } from './dto/favorite.dto';
 import { ReviewDto } from './dto/review.dto';
@@ -121,5 +122,23 @@ export class ActionsController {
   async updateProfile(@CurrentUser() user: RequestUser, @Body() dto: UpdateProfileDto) {
     const data = await this.actionsService.updateMyProfile(user.userId, dto);
     return { success: true, data, message: 'Cap nhat profile thanh cong' };
+  }
+
+  @Get('history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Lay lich su lac cua user' })
+  async getHistory(@CurrentUser() user: RequestUser, @Query('limit') limit?: string) {
+    const data = await this.actionsService.getHistory(user.userId, limit ? Number(limit) : 30);
+    return { success: true, data };
+  }
+
+  @Post('history')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Them mon vao lich su lac' })
+  async addHistory(@CurrentUser() user: RequestUser, @Body() dto: AddHistoryDto) {
+    const data = await this.actionsService.addHistory(user.userId, dto);
+    return { success: true, data, message: 'Da luu lich su' };
   }
 }

@@ -15,6 +15,7 @@ import IORedis from 'ioredis';
 import { Model, Types, isValidObjectId } from 'mongoose';
 
 import { RequestUser } from '../common/request-user.interface';
+import { AddHistoryDto } from './dto/add-history.dto';
 import { ActionDto } from './dto/action.dto';
 import { FavoriteDto } from './dto/favorite.dto';
 import { ReviewDto } from './dto/review.dto';
@@ -22,6 +23,7 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { Favorite, FavoriteDocument } from './schemas/favorite.schema';
 import { Food, FoodDocument } from './schemas/food.schema';
 import { Review, ReviewDocument } from './schemas/review.schema';
+import { ShakeHistory, ShakeHistoryDocument } from './schemas/shake-history.schema';
 import { User, UserDocument } from './schemas/user.schema';
 import { UserAction, UserActionDocument } from './schemas/user-action.schema';
 
@@ -78,6 +80,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     @InjectModel(Review.name) private readonly reviewModel: Model<ReviewDocument>,
     @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
     @InjectModel(Food.name) private readonly foodModel: Model<FoodDocument>,
+    @InjectModel(ShakeHistory.name) private readonly historyModel: Model<ShakeHistoryDocument>,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -421,6 +424,54 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     }));
 
     await this.foodModel.bulkWrite(ops);
+  }
+
+  async addHistory(userId: string, dto: AddHistoryDto): Promise<unknown> {
+    if (!isValidObjectId(userId) || !isValidObjectId(dto.foodId)) {
+      throw new BadRequestException('Id khong hop le');
+    }
+
+    // Remove old entry for same food if exists, then add new one at top
+    await this.historyModel
+      .deleteOne({ userId: new Types.ObjectId(userId), foodId: new Types.ObjectId(dto.foodId) })
+      .exec();
+
+    const created = await this.historyModel.create({
+      userId: new Types.ObjectId(userId),
+      foodId: new Types.ObjectId(dto.foodId),
+      foodName: dto.foodName,
+      foodImage: dto.foodImage ?? null,
+      priceRange: dto.priceRange ?? null,
+      origin: dto.origin ?? null,
+    });
+
+    // Keep only latest 50 entries per user
+    const all = await this.historyModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .select('_id')
+      .lean()
+      .exec();
+
+    if (all.length > 50) {
+      const toDelete = all.slice(50).map((h) => h._id);
+      await this.historyModel.deleteMany({ _id: { $in: toDelete } }).exec();
+    }
+
+    return created.toObject();
+  }
+
+  async getHistory(userId: string, limit = 30): Promise<unknown[]> {
+    if (!isValidObjectId(userId)) {
+      throw new BadRequestException('User id khong hop le');
+    }
+
+    return this.historyModel
+      .find({ userId: new Types.ObjectId(userId) })
+      .sort({ createdAt: -1 })
+      .limit(Math.min(limit, 50))
+      .lean()
+      .exec();
   }
 
   private async persistAction(payload: StoredAction): Promise<void> {
