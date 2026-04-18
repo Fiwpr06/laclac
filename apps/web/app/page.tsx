@@ -502,7 +502,7 @@ export default function HomePage() {
 
         {history.length > 0 ? (
           <div className="space-y-4">
-            {history.map((hItem, idx) => (
+            {history.slice(0, 10).map((hItem, idx) => (
               <div key={`${hItem._id}-${idx}`} className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-gray-100">
                   {getFoodImageUrl(hItem) && (
@@ -535,9 +535,12 @@ export default function HomePage() {
         )}
 
         {history.length > 0 && (
-          <button className="w-full mt-6 py-2.5 text-sm font-medium bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition-colors">
+          <Link
+            href="/history"
+            className="block text-center w-full mt-6 py-2.5 text-sm font-medium bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-gray-600 transition-colors"
+          >
             {t.viewFullHistory}
-          </button>
+          </Link>
         )}
       </div>
     </div>
