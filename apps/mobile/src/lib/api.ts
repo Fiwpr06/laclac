@@ -89,10 +89,10 @@ const COOKING_STYLE_VALUES: readonly CookingStyle[] = [
 const CONTEXT_VALUES: readonly ContextTag[] = ['solo', 'date', 'group', 'travel', 'office'];
 const OBJECT_ID_REGEX = /^[0-9a-fA-F]{24}$/;
 
-const DEFAULT_API_BASE = 'http://localhost:3100/api/v1';
-const DEFAULT_FOOD_API_BASE = 'http://localhost:3002/api/v1';
-const DEFAULT_ACTION_API_BASE = 'http://localhost:3003/api/v1';
-const REQUEST_TIMEOUT_MS = 2500;
+const DEFAULT_API_BASE = 'https://fiwpr.id.vn/api/v1';
+const DEFAULT_FOOD_API_BASE = 'https://fiwpr.id.vn/api/v1';
+const DEFAULT_ACTION_API_BASE = 'https://fiwpr.id.vn/api/v1';
+const REQUEST_TIMEOUT_MS = 10000;
 const BASE_ERROR_COOLDOWN_MS = 15_000;
 
 const normalizeApiBase = (value: string | undefined): string | undefined => {
@@ -108,25 +108,18 @@ const normalizeApiBase = (value: string | undefined): string | undefined => {
   return normalized.replace(/\/+$/, '');
 };
 
-const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-
-const API_BASE = (() => {
-  const raw = normalizeApiBase(env?.['EXPO_PUBLIC_API_URL']);
-  if (!raw) {
-    return DEFAULT_API_BASE;
-  }
-
-  return raw;
-})();
+// Note: process.env.EXPO_PUBLIC_* must be accessed statically so Metro bundler
+// can inline the values at build time. Dynamic access (env?.[key]) is NOT inlined.
+const API_BASE = normalizeApiBase(process.env.EXPO_PUBLIC_API_URL) ?? DEFAULT_API_BASE;
 
 const FOOD_API_BASES = [
-  normalizeApiBase(env?.['EXPO_PUBLIC_FOOD_API_URL']),
+  normalizeApiBase(process.env.EXPO_PUBLIC_FOOD_API_URL),
   API_BASE,
   DEFAULT_FOOD_API_BASE,
 ].filter((value, index, array): value is string => !!value && array.indexOf(value) === index);
 
 const ACTION_API_BASES = [
-  normalizeApiBase(env?.['EXPO_PUBLIC_ACTION_API_URL']),
+  normalizeApiBase(process.env.EXPO_PUBLIC_ACTION_API_URL),
   API_BASE,
   DEFAULT_ACTION_API_BASE,
 ].filter((value, index, array): value is string => !!value && array.indexOf(value) === index);

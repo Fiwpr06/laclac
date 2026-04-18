@@ -21,6 +21,8 @@ import { useFilterStore } from '../../src/store/filter-store';
 import { useHistoryStore } from '../../src/store/history-store';
 import { useShakeDetector } from '../../src/hooks/use-shake-detector';
 import { useSettingsStore } from '../../src/store/settings-store';
+import { useAuthStore } from '../../src/store/auth-store';
+import { favoritesApi, historyApi } from '../../src/lib/user-api';
 
 const playSoundEffect = async (resource: any) => {
   try {
@@ -46,9 +48,12 @@ export default function FoodDetailScreen() {
   const { filters } = useFilterStore();
   const { addHistory } = useHistoryStore();
   const { soundEnabled, hapticEnabled } = useSettingsStore();
+  const { user, accessToken } = useAuthStore();
   const insets = useSafeAreaInsets();
   const [isShaking, setIsShaking] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const [favoriteId, setFavoriteId] = useState<string | null>(null);
+  const [togglingFav, setTogglingFav] = useState(false);
 
   useFocusEffect(
     useCallback(() => {
@@ -105,6 +110,7 @@ export default function FoodDetailScreen() {
     { enabled: isFocused && !loading && !isShaking },
   );
 
+  // Log view action
   useEffect(() => {
     if (!params.id) return;
 
@@ -124,9 +130,13 @@ export default function FoodDetailScreen() {
               context: 'none',
             }),
           )
-          .catch(() => {
-            // Keep detail screen responsive even if telemetry endpoint is unavailable.
-          });
+          .catch(() => {});
+
+        // Check if favorited
+        if (accessToken) {
+          const fid = await favoritesApi.isFavorited(params.id, accessToken);
+          setFavoriteId(fid);
+        }
       } catch {
         setErrorText('Không tải được dữ liệu món ăn. Vui lòng thử lại.');
         setFood(null);
@@ -136,7 +146,32 @@ export default function FoodDetailScreen() {
     };
 
     void run();
-  }, [params.id]);
+  }, [params.id, accessToken]);
+
+  const handleToggleFavorite = async () => {
+    if (!user || !accessToken) {
+      Alert.alert('Chưa đăng nhập', 'Bạn cần đăng nhập để lưu trữ món ăn yêu thích.', [
+        { text: 'Đóng', style: 'cancel' },
+        { text: 'Đăng nhập', onPress: () => router.push('/login') },
+      ]);
+      return;
+    }
+    if (!food) return;
+    setTogglingFav(true);
+    try {
+      if (favoriteId) {
+        await favoritesApi.remove(favoriteId, accessToken);
+        setFavoriteId(null);
+      } else {
+        const created = await favoritesApi.add(food._id, accessToken);
+        setFavoriteId(created._id);
+      }
+    } catch (err: any) {
+      Alert.alert('Lỗi', err?.message ?? 'Không thể thực hiện');
+    } finally {
+      setTogglingFav(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -156,11 +191,7 @@ export default function FoodDetailScreen() {
 
   const image = food.images?.[0] || food.thumbnailImage;
 
-  const handleFavoritePress = () => {
-    Alert.alert('Chưa đăng nhập', 'Bạn cần đăng nhập để lưu trữ món ăn yêu thích.', [
-      { text: 'Đóng', style: 'cancel' },
-    ]);
-  };
+  const handleFavoritePress = () => handleToggleFavorite();
 
   const isFromShake = params.from === 'shake';
 
@@ -176,8 +207,16 @@ export default function FoodDetailScreen() {
 
         <View style={styles.headerRow}>
           <Text style={styles.name}>{food.name}</Text>
-          <Pressable onPress={handleFavoritePress} style={styles.heartBtn}>
-            <Ionicons name="heart-outline" size={28} color="#FF6B35" />
+          <Pressable onPress={handleFavoritePress} style={styles.heartBtn} disabled={togglingFav}>
+            {togglingFav ? (
+              <ActivityIndicator color="#FF6B35" size="small" />
+            ) : (
+              <Ionicons
+                name={favoriteId ? 'heart' : 'heart-outline'}
+                size={28}
+                color={favoriteId ? '#E53935' : '#FF6B35'}
+              />
+            )}
           </Pressable>
         </View>
 

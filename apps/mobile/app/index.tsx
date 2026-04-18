@@ -19,8 +19,10 @@ import { Audio } from 'expo-av';
 import { useFilterStore } from '../src/store/filter-store';
 import { useHistoryStore } from '../src/store/history-store';
 import { useSettingsStore } from '../src/store/settings-store';
+import { useAuthStore } from '../src/store/auth-store';
 import { useShakeDetector } from '../src/hooks/use-shake-detector';
 import { postShake } from '../src/lib/api';
+import { historyApi } from '../src/lib/user-api';
 
 const { width } = Dimensions.get('window');
 
@@ -53,6 +55,7 @@ export default function ShakeScreen() {
   const { filters } = useFilterStore();
   const { history, addHistory } = useHistoryStore();
   const { soundEnabled, setSound, hapticEnabled } = useSettingsStore();
+  const { user, accessToken } = useAuthStore();
 
   const [loading, setLoading] = useState(false);
 
@@ -79,6 +82,20 @@ export default function ShakeScreen() {
           await playSoundEffect(require('../assets/sounds/ting.mp3'));
         }
         addHistory(res.food);
+
+        // Persist history to DB if logged in
+        if (accessToken && res.food._id) {
+          historyApi.add(
+            {
+              foodId: res.food._id,
+              foodName: res.food.name,
+              foodImage: res.food.thumbnailImage ?? res.food.images?.[0],
+              priceRange: res.food.priceRange,
+              origin: res.food.origin,
+            },
+            accessToken,
+          ).catch(() => {});
+        }
 
         if (pathname === '/') {
           router.push(`/food/${res.food._id}?from=shake`);
@@ -115,10 +132,16 @@ export default function ShakeScreen() {
       <View style={styles.header}>
         <View style={styles.userInfo}>
           <Pressable style={styles.avatarPlaceholder} onPress={() => router.push('/profile')}>
-            <Ionicons name="person" size={24} color="#333" />
+            {user?.avatarUrl ? (
+              <Image source={{ uri: user.avatarUrl }} style={{ width: 44, height: 44, borderRadius: 22 }} />
+            ) : (
+              <Ionicons name="person" size={24} color="#333" />
+            )}
           </Pressable>
           <View>
-            <Text style={styles.greeting}>Chào Quý Khách!</Text>
+            <Text style={styles.greeting}>
+              {user ? `Xin chào, ${user.name.split(' ')[0]}!` : 'Chào Quý Khách!'}
+            </Text>
             <Text style={styles.subtitle}>Bạn cần tìm món gì?</Text>
           </View>
         </View>
