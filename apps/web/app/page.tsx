@@ -14,6 +14,7 @@ import {
 } from '../src/lib/api';
 import { useFilters } from '../src/store/filters';
 import { useSettingsStore } from '../src/store/settings';
+import { useHistoryStore } from '../src/store/history';
 import { tPriceRange } from '../src/lib/translate';
 
 const getSessionId = (): string => {
@@ -76,7 +77,7 @@ export default function HomePage() {
 
   const [food, setFood] = useState<FoodItem | null>(null);
   const [queue, setQueue] = useState<FoodItem[]>([]);
-  const [history, setHistory] = useState<FoodItem[]>([]);
+  const { history, addHistory, clearHistory } = useHistoryStore();
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | undefined>(undefined);
   const [mounted, setMounted] = useState(false);
@@ -231,7 +232,7 @@ export default function HomePage() {
           tingAudio.play().catch(() => {});
         } catch (e) {}
         setFood(selectedFood);
-        setHistory((prev) => [selectedFood!, ...prev].slice(0, 10));
+        addHistory(selectedFood!);
       } else {
         try {
           const falseAudio = new Audio('/sounds/false.mp3');
@@ -492,7 +493,7 @@ export default function HomePage() {
             <p className="text-xs text-brand-muted mt-0.5">{t.historyDesc}</p>
           </div>
           <button
-            onClick={() => setHistory([])}
+            onClick={clearHistory}
             className="text-xs px-3 py-1.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors font-medium"
           >
             {t.clearBtn}
