@@ -126,7 +126,7 @@ export class AuthService {
       } else {
         // Create new account
         user = await this.usersService.createUser({
-          name: payload.name ?? payload.email.split('@')[0],
+          name: payload.name || payload.email.split('@')[0] || 'User',
           email: payload.email,
           googleId: payload.sub,
           avatarUrl: payload.picture ?? null,
