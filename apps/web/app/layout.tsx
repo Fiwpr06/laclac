@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   title: 'Lắc Lắc | Tìm món ăn',
   description: 'Khám phá món ăn ngẫu nhiên.',
   icons: {
-    icon: '/favicon.svg',
+    icon: '/favicon.ico',
   },
 };
 
