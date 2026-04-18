@@ -132,7 +132,7 @@ function ToggleGroup<T extends string>({
   );
 }
 
-export default function FilterPage() {
+export default function FilterPage(): JSX.Element {
   const { filters, setFilter, reset } = useFilters();
   const activeFilterCount = countActiveFilters(filters);
   const allergenText = (filters.allergenExclude ?? []).join(', ');

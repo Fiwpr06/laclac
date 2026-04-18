@@ -22,7 +22,7 @@ const countActiveFilters = (filters: WebFilter): number => {
   return scalarCount + ((filters.allergenExclude?.length ?? 0) > 0 ? 1 : 0);
 };
 
-export default function ProfilePage() {
+export default function ProfilePage(): JSX.Element | null {
   const settings = useSettingsStore();
   const { filters } = useFilters();
   const [mounted, setMounted] = useState(false);
@@ -81,6 +81,7 @@ export default function ProfilePage() {
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
               {user.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
               ) : (
                 <span className="text-2xl">🧑‍🍳</span>

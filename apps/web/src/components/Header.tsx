@@ -45,6 +45,7 @@ export default function Header() {
           <Link href={user ? '/profile' : '/login'} className="flex items-center gap-3 group">
             <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition-colors overflow-hidden">
               {user?.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
                 <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
               ) : (
                 <svg

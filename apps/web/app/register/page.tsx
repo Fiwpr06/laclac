@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { authApi } from '../../src/lib/auth-api';
 import { useAuthStore } from '../../src/store/auth-store';
 
-export default function RegisterPage() {
+export default function RegisterPage(): JSX.Element {
   const router = useRouter();
   const { setAuth } = useAuthStore();
   const [name, setName] = useState('');
