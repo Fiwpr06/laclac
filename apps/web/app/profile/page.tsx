@@ -4,6 +4,8 @@ import { useSettingsStore } from '../../src/store/settings';
 import { useFilters } from '../../src/store/filters';
 import { WebFilter } from '../../src/lib/api';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '../../src/store/auth-store';
 
 const countActiveFilters = (filters: WebFilter): number => {
   const scalarCount = [
@@ -28,6 +30,9 @@ export default function ProfilePage() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const router = useRouter();
+  const { user, clearAuth } = useAuthStore();
 
   if (!mounted) return null;
 
@@ -57,6 +62,11 @@ export default function ProfilePage() {
     return Array.isArray(values) ? values.join(', ') : isEn ? 'None' : 'Chưa có';
   };
 
+  const handleLogout = () => {
+    clearAuth();
+    router.push('/');
+  };
+
   return (
     <div className="max-w-4xl mx-auto py-8">
       <div className="mb-8">
@@ -65,6 +75,30 @@ export default function ProfilePage() {
         </h1>
         <p className="text-brand-muted">{t.desc}</p>
       </div>
+
+      {user && (
+        <div className="bg-white rounded-2xl shadow-card p-6 border border-brand-border mb-8 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-sm">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl">🧑‍🍳</span>
+              )}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800">{user.name}</h2>
+              <p className="text-slate-500 text-sm">{user.email}</p>
+            </div>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-lg hover:bg-red-100 transition-colors"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Settings Card */}

@@ -1,12 +1,5 @@
-/**
- * auth-store.ts
- * Zustand store for auth state.
- * Token is kept in memory only; we persist only userId so the app
- * knows whether the user was previously logged in.
- */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type AuthUser = {
   _id: string;
@@ -53,7 +46,6 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'laclac-auth-storage',
-      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

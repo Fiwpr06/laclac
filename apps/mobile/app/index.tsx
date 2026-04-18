@@ -140,7 +140,7 @@ export default function ShakeScreen() {
           </Pressable>
           <View>
             <Text style={styles.greeting}>
-              {user ? `Xin chào, ${user.name.split(' ')[0]}!` : 'Chào Quý Khách!'}
+              {user ? `Xin chào, ${user.name}!` : 'Chào Quý Khách!'}
             </Text>
             <Text style={styles.subtitle}>Bạn cần tìm món gì?</Text>
           </View>

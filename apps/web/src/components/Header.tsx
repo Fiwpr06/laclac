@@ -2,10 +2,12 @@
 
 import Link from 'next/link';
 import { useSettingsStore } from '../store/settings';
+import { useAuthStore } from '../store/auth-store';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
   const { language, setLanguage } = useSettingsStore();
+  const { user } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -40,25 +42,29 @@ export default function Header() {
               {isEn ? 'EN' : 'VI'}
             </button>
           )}
-          <Link href="/profile" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0 hover:bg-gray-200 transition-colors">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-brand-muted"
-              >
-                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
+          <Link href={user ? '/profile' : '/login'} className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-200 transition-colors overflow-hidden">
+              {user?.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-brand-muted"
+                >
+                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+              )}
             </div>
-            <span className="font-semibold text-sm hidden md:block text-brand-secondary">
-              {t.user}
+            <span className="font-semibold text-sm hidden md:block text-brand-secondary group-hover:text-brand-primary transition-colors">
+              {user ? user.name : t.user}
             </span>
           </Link>
         </div>

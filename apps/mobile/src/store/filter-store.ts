@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MobileFilter } from '../lib/api';
 
@@ -21,14 +23,22 @@ const initialFilters: MobileFilter = {
   context: undefined,
 };
 
-export const useFilterStore = create<FilterStore>((set) => ({
-  filters: initialFilters,
-  setFilter: (key, value) =>
-    set((state) => ({
-      filters: {
-        ...state.filters,
-        [key]: value,
-      },
-    })),
-  reset: () => set({ filters: initialFilters }),
-}));
+export const useFilterStore = create<FilterStore>()(
+  persist(
+    (set) => ({
+      filters: initialFilters,
+      setFilter: (key, value) =>
+        set((state) => ({
+          filters: {
+            ...state.filters,
+            [key]: value,
+          },
+        })),
+      reset: () => set({ filters: initialFilters }),
+    }),
+    {
+      name: 'laclac-filter-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);
