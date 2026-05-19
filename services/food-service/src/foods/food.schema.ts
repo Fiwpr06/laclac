@@ -95,3 +95,8 @@ export class Food {
 }
 
 export const FoodSchema = SchemaFactory.createForClass(Food);
+
+FoodSchema.index({ isActive: 1, popularityScore: -1, averageRating: -1 });
+FoodSchema.index({ isActive: 1, contextTags: 1 });
+FoodSchema.index({ isActive: 1, dietTags: 1, priceRange: 1 });
+FoodSchema.index({ _id: 1, isActive: 1 });
