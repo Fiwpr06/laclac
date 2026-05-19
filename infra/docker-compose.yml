@@ -5,6 +5,7 @@ services:
     image: mongo:7
     container_name: laclac-mongodb
     restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
     ports:
       - '27017:27017'
     environment:
@@ -25,6 +26,18 @@ services:
     networks:
       - laclac-net
 
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: laclac-rabbitmq
+    restart: unless-stopped
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - laclac-net
+
   auth-service:
     build:
       context: ../
@@ -37,9 +50,11 @@ services:
       SERVICE_NAME: auth-service
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/lac_lac}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     networks:
       - laclac-net
 
@@ -73,9 +88,11 @@ services:
       SERVICE_NAME: action-service
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/lac_lac}
       REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      RABBITMQ_URL: ${RABBITMQ_URL:-amqp://rabbitmq:5672}
     depends_on:
       - mongodb
       - redis
+      - rabbitmq
     networks:
       - laclac-net
 
@@ -139,3 +156,4 @@ networks:
 volumes:
   mongodb_data:
   redis_data:
+  rabbitmq_data:
