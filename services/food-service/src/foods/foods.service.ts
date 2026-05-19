@@ -16,7 +16,7 @@ import { ShakeRequestDto } from './dto/shake.dto';
 import { Food, FoodDocument } from './food.schema';
 
 interface FoodsPageResult {
-  items: unknown[];
+  items: Food[];
   meta: {
     page: number;
     limit: number;
@@ -28,7 +28,7 @@ interface FoodsPageResult {
 export interface ShakeResult {
   sessionId: string;
   triggerType: 'shake' | 'button';
-  food: unknown | null;
+  food: Food | null;
   actionHint: {
     sessionId: string;
     foodId?: string;
@@ -75,7 +75,7 @@ export class FoodsService {
     };
   }
 
-  async findById(foodId: string): Promise<unknown> {
+  async findById(foodId: string): Promise<Food> {
     if (!isValidObjectId(foodId)) {
       throw new BadRequestException('Food id khong hop le');
     }
@@ -85,15 +85,15 @@ export class FoodsService {
       throw new NotFoundException('Khong tim thay mon an');
     }
 
-    return food;
+    return food as Food;
   }
 
-  async random(filters: FilterDto): Promise<unknown | null> {
+  async random(filters: FilterDto): Promise<Food | null> {
     const match = this.buildFilter(filters);
     const result = await this.foodModel
       .aggregate([{ $match: match }, { $sample: { size: 1 } }])
       .exec();
-    return result[0] ?? null;
+    return (result[0] as Food) ?? null;
   }
 
   async shake(dto: ShakeRequestDto): Promise<ShakeResult> {
@@ -117,17 +117,22 @@ export class FoodsService {
     };
   }
 
-  async swipeQueue(filters: FilterDto): Promise<unknown[]> {
+  async swipeQueue(filters: FilterDto): Promise<Food[]> {
     const match = this.buildFilter(filters);
     return this.foodModel.aggregate([{ $match: match }, { $sample: { size: 10 } }]).exec();
   }
 
-  async filter(dto: FilterDto): Promise<unknown[]> {
+  async filter(dto: FilterDto): Promise<Food[]> {
     const match = this.buildFilter(dto);
-    return this.foodModel.find(match).sort({ popularityScore: -1 }).limit(50).lean().exec();
+    return this.foodModel
+      .find(match)
+      .sort({ popularityScore: -1 })
+      .limit(50)
+      .lean()
+      .exec() as Promise<Food[]>;
   }
 
-  async byContext(dto: ContextRequestDto): Promise<unknown[]> {
+  async byContext(dto: ContextRequestDto): Promise<Food[]> {
     const baseMatch = this.buildFilter(dto.filters ?? {});
     const match = applyContextRules(dto.context, baseMatch);
 
@@ -136,10 +141,10 @@ export class FoodsService {
       .sort({ popularityScore: -1, averageRating: -1 })
       .limit(50)
       .lean()
-      .exec();
+      .exec() as Promise<Food[]>;
   }
 
-  async create(dto: CreateFoodDto): Promise<unknown> {
+  async create(dto: CreateFoodDto): Promise<Food> {
     const nameSlug = toSlug(dto.name);
 
     const existing = await this.foodModel.findOne({ nameSlug }).lean().exec();
@@ -175,10 +180,10 @@ export class FoodsService {
       isActive: dto.isActive ?? true,
     });
 
-    return created.toObject();
+    return created.toObject() as Food;
   }
 
-  async update(foodId: string, dto: UpdateFoodDto): Promise<unknown> {
+  async update(foodId: string, dto: UpdateFoodDto): Promise<Food> {
     if (!isValidObjectId(foodId)) {
       throw new BadRequestException('Food id khong hop le');
     }
@@ -188,7 +193,7 @@ export class FoodsService {
       throw new NotFoundException('Khong tim thay mon an');
     }
 
-    const updateData: Record<string, unknown> = { ...dto };
+    const updateData: Record<string, any> = { ...dto };
 
     if (dto.name && dto.name !== existing.name) {
       const slug = toSlug(dto.name);
@@ -224,7 +229,7 @@ export class FoodsService {
       throw new NotFoundException('Khong tim thay mon an');
     }
 
-    return updated;
+    return updated as Food;
   }
 
   async softDelete(foodId: string): Promise<{ deleted: boolean }> {
@@ -344,12 +349,12 @@ export class FoodsService {
     return query;
   }
 
-  private resolveFoodId(food: unknown): string | undefined {
+  private resolveFoodId(food: any): string | undefined {
     if (!food || typeof food !== 'object') {
       return undefined;
     }
 
-    const candidate = food as { _id?: unknown };
+    const candidate = food as { _id?: any };
     if (candidate._id === undefined || candidate._id === null) {
       return undefined;
     }
