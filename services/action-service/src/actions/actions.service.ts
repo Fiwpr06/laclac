@@ -24,8 +24,8 @@ import { Favorite, FavoriteDocument } from './schemas/favorite.schema';
 import { Food, FoodDocument } from './schemas/food.schema';
 import { Review, ReviewDocument } from './schemas/review.schema';
 import { ShakeHistory, ShakeHistoryDocument } from './schemas/shake-history.schema';
-import { User, UserDocument } from './schemas/user.schema';
 import { UserAction, UserActionDocument } from './schemas/user-action.schema';
+import { OutboxEvent, OutboxEventDocument } from './schemas/outbox-event.schema';
 
 interface StoredAction {
   userId?: string;
@@ -78,7 +78,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     @InjectModel(UserAction.name) private readonly actionModel: Model<UserActionDocument>,
     @InjectModel(Favorite.name) private readonly favoriteModel: Model<FavoriteDocument>,
     @InjectModel(Review.name) private readonly reviewModel: Model<ReviewDocument>,
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    @InjectModel(OutboxEvent.name) private readonly outboxModel: Model<OutboxEventDocument>,
     @InjectModel(Food.name) private readonly foodModel: Model<FoodDocument>,
     @InjectModel(ShakeHistory.name) private readonly historyModel: Model<ShakeHistoryDocument>,
   ) {}
@@ -336,28 +336,23 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException('User id khong hop le');
     }
 
-    const updateData: Record<string, unknown> = {};
+    const eventId = require('crypto').randomUUID();
 
-    if (dto.dietPreferences?.type) {
-      updateData['dietPreferences.type'] = dto.dietPreferences.type;
-    }
+    // 1. Lưu Event vào Outbox thay vì trực tiếp cập nhật db (Decoupling)
+    await this.outboxModel.create({
+      eventId,
+      eventType: 'USER_PROFILE_UPDATED',
+      payload: {
+        userId,
+        dto,
+      },
+      status: 'PENDING',
+    });
 
-    if (dto.dietPreferences?.allergies) {
-      updateData['dietPreferences.allergies'] = dto.dietPreferences.allergies;
-    } else if (dto.allergies) {
-      updateData['dietPreferences.allergies'] = dto.allergies;
-    }
+    this.logger.log(`[Outbox] Đã lưu event USER_PROFILE_UPDATED cho user ${userId}`);
 
-    const updated = await this.userModel
-      .findByIdAndUpdate(userId, updateData, { new: true })
-      .lean()
-      .exec();
-
-    if (!updated) {
-      throw new NotFoundException('Khong tim thay nguoi dung');
-    }
-
-    return updated;
+    // Message sẽ được OutboxPublisherService lấy và push lên RabbitMQ
+    return { accepted: true };
   }
 
   @Cron(CronExpression.EVERY_HOUR)
