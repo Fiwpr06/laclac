@@ -185,7 +185,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     dto: FavoriteDto,
     sessionId?: string,
     deviceType: 'mobile' | 'web' = 'web',
-  ): Promise<unknown> {
+  ): Promise<Favorite> {
     if (!isValidObjectId(userId) || !isValidObjectId(dto.foodId)) {
       throw new BadRequestException('Id khong hop le');
     }
@@ -221,12 +221,12 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getFavorites(userId: string, listType?: string): Promise<unknown[]> {
+  async getFavorites(userId: string, listType?: string): Promise<Favorite[]> {
     if (!isValidObjectId(userId)) {
       throw new BadRequestException('User id khong hop le');
     }
 
-    const query: Record<string, unknown> = {
+    const query: Record<string, any> = {
       userId: new Types.ObjectId(userId),
     };
 
@@ -280,7 +280,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     dto: ReviewDto,
     sessionId?: string,
     deviceType: 'mobile' | 'web' = 'web',
-  ): Promise<unknown> {
+  ): Promise<Review> {
     if (!isValidObjectId(userId) || !isValidObjectId(dto.foodId)) {
       throw new BadRequestException('Id khong hop le');
     }
@@ -319,7 +319,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async getReviews(foodId: string): Promise<unknown[]> {
+  async getReviews(foodId: string): Promise<Review[]> {
     if (!isValidObjectId(foodId)) {
       throw new BadRequestException('foodId khong hop le');
     }
@@ -328,10 +328,10 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
       .find({ foodId: new Types.ObjectId(foodId), isHidden: false })
       .sort({ createdAt: -1 })
       .lean()
-      .exec();
+      .exec() as Promise<Review[]>;
   }
 
-  async updateMyProfile(userId: string, dto: UpdateProfileDto): Promise<unknown> {
+  async updateMyProfile(userId: string, dto: UpdateProfileDto): Promise<{ accepted: boolean }> {
     if (!isValidObjectId(userId)) {
       throw new BadRequestException('User id khong hop le');
     }
@@ -421,7 +421,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     await this.foodModel.bulkWrite(ops);
   }
 
-  async addHistory(userId: string, dto: AddHistoryDto): Promise<unknown> {
+  async addHistory(userId: string, dto: AddHistoryDto): Promise<ShakeHistory> {
     if (!isValidObjectId(userId) || !isValidObjectId(dto.foodId)) {
       throw new BadRequestException('Id khong hop le');
     }
@@ -456,7 +456,7 @@ export class ActionsService implements OnModuleInit, OnModuleDestroy {
     return created.toObject();
   }
 
-  async getHistory(userId: string, limit = 30): Promise<unknown[]> {
+  async getHistory(userId: string, limit = 30): Promise<ShakeHistory[]> {
     if (!isValidObjectId(userId)) {
       throw new BadRequestException('User id khong hop le');
     }
