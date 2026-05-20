@@ -79,4 +79,8 @@ export class UsersService {
       .findByIdAndUpdate(userId, { name }, { new: true })
       .exec();
   }
+
+  async updateProfile(userId: string, updateData: Record<string, any>): Promise<void> {
+    await this.userModel.findByIdAndUpdate(userId, { $set: updateData }).exec();
+  }
 }
