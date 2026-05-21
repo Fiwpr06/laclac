@@ -15,7 +15,7 @@ async function bootstrap() {
     transports: [new winston.transports.Console()],
   });
 
-  const app = await NestFactory.create(AppModule, { logger });
+  const app = await NestFactory.create(AppModule, { logger, rawBody: true });
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
