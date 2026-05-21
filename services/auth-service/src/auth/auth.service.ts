@@ -7,7 +7,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { OAuth2Client } from 'google-auth-library';
+import { RedisService } from '@liaoliaots/nestjs-redis';
+import Redis from 'ioredis';
 
 import { UsersService } from '../users/users.service';
 import { UserDocument } from '../users/user.schema';
@@ -39,6 +42,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly redisService: RedisService,
   ) {
     this.googleClient = new OAuth2Client(
       this.configService.get<string>('GOOGLE_CLIENT_ID', ''),
@@ -149,6 +153,8 @@ export class AuthService {
     if (!dto.refreshToken) {
       throw new BadRequestException('Thieu refresh token');
     }
+    
+    const redis = this.redisService.getOrThrow();
 
     let payload: JwtPayload;
     try {
@@ -160,19 +166,40 @@ export class AuthService {
     }
 
     const user = await this.usersService.findById(payload.sub);
-    if (!user || !user.refreshTokenHash) {
+    if (!user) {
       throw new UnauthorizedException('Refresh token khong hop le');
     }
 
-    const isValid = await bcrypt.compare(dto.refreshToken, user.refreshTokenHash);
-    if (!isValid) {
-      throw new UnauthorizedException('Refresh token khong hop le');
+    const isMatchDb = user.refreshTokenHash 
+      ? await bcrypt.compare(dto.refreshToken, user.refreshTokenHash)
+      : false;
+
+    // Băm nhẹ old token để làm key Redis
+    const tokenHashId = crypto.createHash('sha256').update(dto.refreshToken).digest('hex');
+    const graceKey = `grace_rt:${user.id}:${tokenHashId}`;
+
+    if (isMatchDb) {
+      const { accessToken, refreshToken } = await this.createTokens(user);
+      const newHash = await bcrypt.hash(refreshToken, 10);
+      
+      // Cache cặp token này vào cửa sổ ân hạn 60 giây
+      await redis.set(graceKey, JSON.stringify({ accessToken, refreshToken }), 'EX', 60);
+      
+      await this.usersService.updateRefreshToken(user.id, newHash);
+      return { accessToken, refreshToken };
+    } else {
+      // Race Condition hoặc Token Reuse Attack
+      const graceData = await redis.get(graceKey);
+      
+      if (graceData) {
+        // Nằm trong cửa sổ ân hạn: Trả về token cache
+        return JSON.parse(graceData);
+      } else {
+        // Token reuse: Xóa sạch phiên
+        await this.usersService.clearRefreshToken(user.id);
+        throw new UnauthorizedException('Phat hien su dung lai token. Tai khoan da bi tam khoa phien dang nhap.');
+      }
     }
-
-    const { accessToken, refreshToken } = await this.createTokens(user);
-    await this.usersService.updateRefreshToken(user.id, await bcrypt.hash(refreshToken, 10));
-
-    return { accessToken };
   }
 
   async logout(userId: string) {
