@@ -9,10 +9,15 @@ import { JwtPayload } from './types/jwt-payload';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
+    const secret = configService.get<string>('JWT_SECRET');
+    if (process.env['NODE_ENV'] === 'production' && !secret) {
+      throw new Error('JWT_SECRET is required in production environment');
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET', 'lac-lac-default-secret-32-characters-minimum'),
+      secretOrKey: secret || 'lac-lac-default-secret-32-characters-minimum',
     });
   }
 

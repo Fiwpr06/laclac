@@ -44,9 +44,7 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
   ) {
-    this.googleClient = new OAuth2Client(
-      this.configService.get<string>('GOOGLE_CLIENT_ID', ''),
-    );
+    this.googleClient = new OAuth2Client(this.configService.get<string>('GOOGLE_CLIENT_ID', ''));
   }
 
   async register(dto: RegisterDto) {
@@ -79,7 +77,9 @@ export class AuthService {
     }
 
     if (!user.passwordHash) {
-      throw new UnauthorizedException('Tai khoan nay dung Google dang nhap, vui long su dung Google');
+      throw new UnauthorizedException(
+        'Tai khoan nay dung Google dang nhap, vui long su dung Google',
+      );
     }
 
     const isMatch = await bcrypt.compare(dto.password, user.passwordHash);
@@ -158,8 +158,13 @@ export class AuthService {
 
     let payload: JwtPayload;
     try {
+      const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+      if (process.env['NODE_ENV'] === 'production' && !refreshSecret) {
+        throw new Error('JWT_REFRESH_SECRET is required in production');
+      }
+
       payload = await this.jwtService.verifyAsync<JwtPayload>(dto.refreshToken, {
-        secret: this.configService.get<string>('JWT_REFRESH_SECRET', 'lac-lac-refresh-secret'),
+        secret: refreshSecret || 'lac-lac-refresh-secret',
       });
     } catch {
       throw new UnauthorizedException('Refresh token khong hop le');
@@ -235,13 +240,21 @@ export class AuthService {
       role: user.role,
     };
 
+    const secret = this.configService.get<string>('JWT_SECRET');
+    const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
+
+    if (process.env['NODE_ENV'] === 'production') {
+      if (!secret) throw new Error('JWT_SECRET is required in production');
+      if (!refreshSecret) throw new Error('JWT_REFRESH_SECRET is required in production');
+    }
+
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_SECRET', 'lac-lac-default-secret-32-characters-minimum'),
+      secret: secret || 'lac-lac-default-secret-32-characters-minimum',
       expiresIn: this.configService.get<string>('JWT_EXPIRES_IN', '15m'),
     });
 
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.configService.get<string>('JWT_REFRESH_SECRET', 'lac-lac-refresh-secret'),
+      secret: refreshSecret || 'lac-lac-refresh-secret',
       expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d'),
     });
 
