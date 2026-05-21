@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WinstonModule } from 'nest-winston';
 import * as winston from 'winston';
@@ -16,6 +17,18 @@ async function bootstrap() {
   });
 
   const app = await NestFactory.create(AppModule, { logger });
+
+  app.connectMicroservice<MicroserviceOptions>({
+    transport: Transport.RMQ,
+    options: {
+      urls: [process.env['RABBITMQ_URL'] || 'amqp://localhost:5672'],
+      queue: 'laclac_events_queue',
+      queueOptions: {
+        durable: true,
+      },
+      noAck: false,
+    },
+  });
 
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(
@@ -41,6 +54,7 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs/auth', app, swaggerDoc);
 
   const port = Number(process.env['AUTH_SERVICE_PORT'] ?? process.env['PORT'] ?? 3001);
+  await app.startAllMicroservices();
   await app.listen(port);
 }
 
