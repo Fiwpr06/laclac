@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default function DownloadPage() {
-  const expoUrl = process.env.NEXT_PUBLIC_EXPO_URL;
+  const expoUrl = process.env['NEXT_PUBLIC_EXPO_URL'];
 
   return (
     <div className="min-h-[calc(100vh-80px)] w-full flex flex-col pt-8 pb-20 relative overflow-hidden">
