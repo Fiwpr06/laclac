@@ -63,7 +63,7 @@ const parseSortOrder = (value: string | undefined): number => {
 
 const buildCategoryPayload = (formData: FormData): AdminCategoryPayload => {
   return {
-    name: getRequiredText(formData, 'name', 'Ten category'),
+    name: { vi: getRequiredText(formData, 'name', 'Ten category'), en: '' },
     type: parseCategoryType(getRequiredText(formData, 'type', 'Category type')),
     icon: getOptionalText(formData, 'icon'),
     sortOrder: parseSortOrder(getOptionalText(formData, 'sortOrder')),

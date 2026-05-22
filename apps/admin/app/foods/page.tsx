@@ -135,7 +135,7 @@ function FoodFormFields({
       <input
         id={nameInputId}
         name="name"
-        defaultValue={food?.name ?? ''}
+        defaultValue={food?.name?.vi ?? ''}
         placeholder="Tên món ăn"
         className="rounded border p-2"
         required
@@ -178,7 +178,7 @@ function FoodFormFields({
 
       <input
         name="ingredientsCsv"
-        defaultValue={(food?.ingredients ?? []).join(',')}
+        defaultValue={(Array.isArray(food?.ingredients) ? food?.ingredients : (food?.ingredients as any)?.vi ?? []).join(',')}
         placeholder="Ingredients CSV"
         className="rounded border p-2"
         required
@@ -195,7 +195,7 @@ function FoodFormFields({
         <option value="">Không chọn category</option>
         {categories.map((category) => (
           <option key={category._id} value={category._id}>
-            {category.name}
+            {typeof category.name === 'string' ? category.name : category.name?.vi}
           </option>
         ))}
       </select>
@@ -222,7 +222,7 @@ function FoodFormFields({
 
       <input
         name="tagsCsv"
-        defaultValue={(food?.tags ?? []).join(',')}
+        defaultValue={(Array.isArray(food?.tags) ? food?.tags : (food?.tags as any)?.vi ?? []).join(',')}
         placeholder="Tags CSV"
         className="rounded border p-2"
       />
@@ -261,7 +261,7 @@ function FoodFormFields({
 
       <textarea
         name="description"
-        defaultValue={food?.description ?? ''}
+        defaultValue={typeof food?.description === 'string' ? food.description : (food?.description as any)?.vi ?? ''}
         placeholder="Mô tả"
         className="rounded border p-2 md:col-span-2"
         rows={3}
@@ -346,7 +346,7 @@ export default async function FoodsAdminPage({
                     active ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  <p className="font-semibold text-slate-800">{food.name}</p>
+                  <p className="font-semibold text-slate-800">{typeof food.name === 'string' ? food.name : food.name?.vi}</p>
                 </Link>
               );
             })}

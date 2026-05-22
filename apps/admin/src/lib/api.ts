@@ -52,17 +52,17 @@ export type CategoryType = 'cuisine' | 'meal_type' | 'diet';
 
 export type AdminFood = {
   _id: string;
-  name: string;
-  description?: string;
+  name: { vi: string; en?: string };
+  description?: { vi: string; en?: string } | string;
   images?: string[];
   thumbnailImage?: string;
   category?: string | { _id?: string; name?: string };
   mealTypes: MealType[];
   priceRange: PriceRange;
-  ingredients: string[];
+  ingredients: { vi: string[]; en?: string[] } | string[];
   dietTags?: DietTag[];
   allergens?: string[];
-  tags?: string[];
+  tags?: { vi: string[]; en?: string[] } | string[];
   origin?: string;
   cookingStyle?: CookingStyle;
   contextTags?: ContextTag[];
@@ -73,17 +73,17 @@ export type AdminFood = {
 };
 
 export type AdminFoodPayload = {
-  name: string;
-  description?: string;
+  name: { vi: string; en?: string };
+  description?: { vi: string; en?: string } | string;
   images?: string[];
   thumbnailImage?: string;
   category?: string;
   mealTypes: MealType[];
   priceRange: PriceRange;
-  ingredients: string[];
+  ingredients: { vi: string[]; en?: string[] } | string[];
   dietTags?: DietTag[];
   allergens?: string[];
-  tags?: string[];
+  tags?: { vi: string[]; en?: string[] } | string[];
   origin?: string;
   cookingStyle?: CookingStyle;
   contextTags?: ContextTag[];
@@ -95,7 +95,7 @@ export type AdminFoodPayload = {
 
 export type AdminCategory = {
   _id: string;
-  name: string;
+  name: { vi: string; en?: string };
   type: CategoryType;
   icon?: string;
   sortOrder?: number;
@@ -103,7 +103,7 @@ export type AdminCategory = {
 };
 
 export type AdminCategoryPayload = {
-  name: string;
+  name: { vi: string; en?: string };
   type: CategoryType;
   icon?: string;
   sortOrder?: number;

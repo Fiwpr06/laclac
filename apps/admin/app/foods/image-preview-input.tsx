@@ -139,6 +139,7 @@ export default function FoodImagePreviewInput({
 
   return (
     <div className="space-y-2 md:col-span-2">
+      <input type="hidden" name="originalImageUrl" value={defaultUrl ?? ''} />
       <input
         name="imageUrl"
         value={urlValue}

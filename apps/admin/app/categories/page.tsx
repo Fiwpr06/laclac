@@ -87,7 +87,7 @@ export default async function CategoriesAdminPage({
 
               <input
                 name="name"
-                defaultValue={category.name}
+                defaultValue={typeof category.name === 'string' ? category.name : category.name?.vi}
                 className="rounded-lg border p-2"
                 required
               />

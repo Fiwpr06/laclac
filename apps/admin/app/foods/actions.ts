@@ -179,8 +179,13 @@ const uploadFileAndGetUrl = async (file: File, dishName: string): Promise<string
 };
 
 const uploadUrlAndGetUrl = async (imageUrl: string, dishName: string): Promise<string> => {
-  const uploaded = await uploadMediaImage({ imageUrl, assetName: dishName });
-  return uploaded.url;
+  try {
+    const uploaded = await uploadMediaImage({ imageUrl, assetName: dishName });
+    return uploaded.url;
+  } catch (err) {
+    console.warn('Fallback to raw imageUrl due to upload failure:', err);
+    return imageUrl;
+  }
 };
 
 const resolveImages = async (
@@ -189,12 +194,15 @@ const resolveImages = async (
 ): Promise<{ thumbnailImage?: string; images: string[] }> => {
   let selectedImage: string | undefined;
   const imageUrl = getOptionalText(formData, 'imageUrl');
+  const originalImageUrl = getOptionalText(formData, 'originalImageUrl');
 
   const imageFile = getOptionalFile(formData, 'imageFile');
   if (imageFile) {
     selectedImage = await uploadFileAndGetUrl(imageFile, dishName);
-  } else if (imageUrl) {
+  } else if (imageUrl && imageUrl !== originalImageUrl) {
     selectedImage = await uploadUrlAndGetUrl(imageUrl, dishName);
+  } else if (imageUrl) {
+    selectedImage = imageUrl;
   }
 
   const normalized = selectedImage?.trim();
@@ -206,16 +214,16 @@ const resolveImages = async (
 };
 
 const buildFoodPayload = async (formData: FormData): Promise<AdminFoodPayload> => {
-  const name = getRequiredText(formData, 'name', 'Tên món ăn');
+  const nameVi = getRequiredText(formData, 'name', 'Tên món ăn');
   const priceRange = parsePriceRange(getRequiredText(formData, 'priceRange', 'Price range'));
   const mealTypes = parseMealTypes(formData);
   const ingredients = parseCsvList(getRequiredText(formData, 'ingredientsCsv', 'Ingredients'));
   const dietTags = parseDietTags(formData);
   const contextTags = parseContextTags(formData);
-  let { thumbnailImage, images } = await resolveImages(formData, name);
+  let { thumbnailImage, images } = await resolveImages(formData, nameVi);
 
   if (!thumbnailImage && images.length === 0) {
-    const autoImageUrl = await resolveAutoImageUrl(name);
+    const autoImageUrl = await resolveAutoImageUrl(nameVi);
     if (autoImageUrl) {
       thumbnailImage = autoImageUrl;
       images = [autoImageUrl];
@@ -226,18 +234,20 @@ const buildFoodPayload = async (formData: FormData): Promise<AdminFoodPayload> =
     throw new Error('Ingredients là bắt buộc');
   }
 
+  const desc = getOptionalText(formData, 'description');
+
   return {
-    name,
-    description: getOptionalText(formData, 'description'),
+    name: { vi: nameVi, en: '' },
+    description: desc ? { vi: desc, en: '' } : undefined,
     images,
     thumbnailImage,
     category: getOptionalText(formData, 'category'),
     mealTypes,
     priceRange,
-    ingredients,
+    ingredients: { vi: ingredients, en: [] },
     dietTags,
     allergens: parseCsvList(getOptionalText(formData, 'allergensCsv')),
-    tags: parseCsvList(getOptionalText(formData, 'tagsCsv')),
+    tags: { vi: parseCsvList(getOptionalText(formData, 'tagsCsv')), en: [] },
     origin: getOptionalText(formData, 'origin'),
     cookingStyle: parseCookingStyle(getOptionalText(formData, 'cookingStyle')),
     contextTags,
