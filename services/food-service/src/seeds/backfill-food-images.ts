@@ -46,7 +46,7 @@ type ImageResult = {
 
 type BackfillFoodDoc = {
   _id: mongoose.Types.ObjectId;
-  name?: string;
+  name?: { vi: string, en: string };
   nameSlug?: string;
   images?: string[];
   thumbnailImage?: string;
@@ -205,7 +205,7 @@ async function runBackfill() {
   const foods = (await FoodModel.find({})
     .select('_id name nameSlug images thumbnailImage')
     .lean()
-    .exec()) as BackfillFoodDoc[];
+    .exec()) as unknown as BackfillFoodDoc[];
 
   let scanned = 0;
   let updated = 0;
@@ -216,7 +216,7 @@ async function runBackfill() {
   for (const food of foods) {
     scanned += 1;
 
-    const dishName = (food.name ?? '').trim();
+    const dishName = (food.name?.vi ?? '').trim();
     if (!dishName) {
       skipped += 1;
       continue;

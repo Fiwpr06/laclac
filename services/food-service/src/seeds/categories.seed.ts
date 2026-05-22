@@ -1,0 +1,15 @@
+export const CATEGORIES_SEED = [
+  { name: { vi: 'Cơm & Xôi', en: 'Rice & Sticky Rice' }, nameSlug: 'com-xoi', icon: '🍚', sortOrder: 1 },
+  { name: { vi: 'Bún & Phở', en: 'Noodles & Pho' }, nameSlug: 'bun-pho', icon: '🍜', sortOrder: 2 },
+  { name: { vi: 'Mì & Hủ Tiếu', en: 'Egg Noodles & Hu Tieu' }, nameSlug: 'mi-hu-tieu', icon: '🍝', sortOrder: 3 },
+  { name: { vi: 'Bánh', en: 'Savory Cakes' }, nameSlug: 'banh', icon: '🥐', sortOrder: 4 },
+  { name: { vi: 'Ăn Vặt & Vỉa Hè', en: 'Street Food & Snacks' }, nameSlug: 'an-vat-via-he', icon: '🥢', sortOrder: 5 },
+  { name: { vi: 'Lẩu & Nướng', en: 'Hotpot & BBQ' }, nameSlug: 'lau-nuong', icon: '🫕', sortOrder: 6 },
+  { name: { vi: 'Đồ Chay', en: 'Vegetarian' }, nameSlug: 'do-chay', icon: '🥗', sortOrder: 7 },
+  { name: { vi: 'Hải Sản', en: 'Seafood' }, nameSlug: 'hai-san', icon: '🦐', sortOrder: 8 },
+  { name: { vi: 'Món Nướng & Chiên', en: 'Grilled & Fried' }, nameSlug: 'nuong-chien', icon: '🍗', sortOrder: 9 },
+  { name: { vi: 'Súp & Canh', en: 'Soups & Broths' }, nameSlug: 'sup-canh', icon: '🍲', sortOrder: 10 },
+  { name: { vi: 'Salad & Gỏi', en: 'Salads' }, nameSlug: 'salad-goi', icon: '🥙', sortOrder: 11 },
+  { name: { vi: 'Đồ Uống & Tráng Miệng', en: 'Drinks & Desserts' }, nameSlug: 'do-uong-trang-mieng', icon: '🧋', sortOrder: 12 },
+  { name: { vi: 'Món Nước Ngoài', en: 'International' }, nameSlug: 'mon-nuoc-ngoai', icon: '🌍', sortOrder: 13 },
+];
