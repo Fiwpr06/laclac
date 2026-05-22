@@ -15,6 +15,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../common/current-user.decorator';
 import { JwtAuthGuard } from '../common/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../common/optional-jwt-auth.guard';
+import { ActionSignatureGuard } from '../common/action-signature.guard';
 import { RequestUser } from '../common/request-user.interface';
 import { AddHistoryDto } from './dto/add-history.dto';
 import { ActionDto } from './dto/action.dto';
@@ -32,8 +33,8 @@ export class ActionsController {
   constructor(private readonly actionsService: ActionsService) {}
 
   @Post('actions')
-  @UseGuards(OptionalJwtAuthGuard)
-  @ApiOperation({ summary: 'Log user action async (AI data)' })
+  @UseGuards(ActionSignatureGuard)
+  @ApiOperation({ summary: 'Log user action async (HMAC Secured)' })
   async createAction(@Body() dto: ActionDto, @CurrentUser() user?: RequestUser) {
     const data = await this.actionsService.enqueueAction(dto, user);
     return { success: true, data, message: 'Action accepted' };
