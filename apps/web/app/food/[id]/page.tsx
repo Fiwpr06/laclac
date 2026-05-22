@@ -17,9 +17,9 @@ export default async function FoodDetailPage({ params }: { params: { id: string 
       </Link>
 
       <article className="lac-card p-6">
-        <h1 className="text-4xl font-black text-brand-secondary">{food.name}</h1>
+        <h1 className="text-4xl font-black text-brand-secondary">{food.name?.vi}</h1>
         <p className="mt-3 text-brand-secondary/75">
-          {food.description ?? 'Món ngon hợp khẩu vị Việt.'}
+          {food.description?.vi ?? 'Món ngon hợp khẩu vị Việt.'}
         </p>
 
         <div className="mt-5 flex flex-wrap gap-2 text-sm font-semibold text-brand-secondary">

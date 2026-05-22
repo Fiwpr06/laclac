@@ -6,10 +6,12 @@ interface SettingsStore {
   soundEnabled: boolean;
   hapticEnabled: boolean;
   reduceMotion: boolean;
+  swipeModeEnabled: boolean;
   setLanguage: (lang: 'vi' | 'en') => void;
   setSound: (v: boolean) => void;
   setHaptic: (v: boolean) => void;
   setReduceMotion: (v: boolean) => void;
+  setSwipeModeEnabled: (v: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsStore>()(
@@ -19,10 +21,12 @@ export const useSettingsStore = create<SettingsStore>()(
       soundEnabled: true,
       hapticEnabled: true,
       reduceMotion: false,
+      swipeModeEnabled: false,
       setLanguage: (val) => set({ language: val }),
       setSound: (val) => set({ soundEnabled: val }),
       setHaptic: (val) => set({ hapticEnabled: val }),
       setReduceMotion: (val) => set({ reduceMotion: val }),
+      setSwipeModeEnabled: (val) => set({ swipeModeEnabled: val }),
     }),
     {
       name: 'laclac_web_settings',

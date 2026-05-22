@@ -69,6 +69,7 @@ export const authApi = {
       reduceMotion?: boolean;
       disableConfetti?: boolean;
       textScale?: number;
+      swipeModeEnabled?: boolean;
     },
     token: string,
   ) => put<AuthUser>('/auth/me/settings', settings, token),

@@ -6,6 +6,7 @@ import { WebFilter } from '../../src/lib/api';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '../../src/store/auth-store';
+import { authApi } from '../../src/lib/auth-api';
 
 const countActiveFilters = (filters: WebFilter): number => {
   const scalarCount = [
@@ -54,6 +55,7 @@ export default function ProfilePage(): JSX.Element | null {
     cuisine: isEn ? 'Cuisine' : 'Ẩm thực',
     diet: isEn ? 'Diet' : 'Chế độ ăn',
     allergens: isEn ? 'Excluded Allergens' : 'Dị ứng loại trừ',
+    swipeMode: isEn ? 'Swipe Feature' : 'Tính năng Vuốt',
   };
 
   const toListText = (values?: string | string[]) => {
@@ -65,6 +67,18 @@ export default function ProfilePage(): JSX.Element | null {
   const handleLogout = () => {
     clearAuth();
     router.push('/');
+  };
+
+  const handleToggleSwipeMode = async (checked: boolean) => {
+    settings.setSwipeModeEnabled(checked);
+    const token = useAuthStore.getState().accessToken;
+    if (user && token) {
+      try {
+        await authApi.updateSettings({ swipeModeEnabled: checked }, token);
+      } catch (err) {
+        console.error('Failed to sync swipe mode settings', err);
+      }
+    }
   };
 
   return (
@@ -162,6 +176,21 @@ export default function ProfilePage(): JSX.Element | null {
                   className="sr-only peer"
                   checked={settings.reduceMotion}
                   onChange={(e) => settings.setReduceMotion(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
+              </label>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold text-gray-800">{t.swipeMode}</div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={settings.swipeModeEnabled}
+                  onChange={(e) => handleToggleSwipeMode(e.target.checked)}
                 />
                 <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-primary"></div>
               </label>

@@ -66,7 +66,7 @@ export default function HistoryPage(): JSX.Element {
                   {getFoodImageUrl(hItem) ? (
                     <Image
                       src={getFoodImageUrl(hItem)}
-                      alt={hItem.name}
+                      alt={hItem.name?.vi ?? 'Food'}
                       width={64}
                       height={64}
                       className="object-cover w-full h-full"
@@ -82,12 +82,12 @@ export default function HistoryPage(): JSX.Element {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-base font-semibold text-gray-900 truncate" title={hItem.name}>
-                    {hItem.name}
+                  <h4 className="text-base font-semibold text-gray-900 truncate" title={hItem.name?.vi}>
+                    {hItem.name?.vi}
                   </h4>
                   <p className="text-sm text-gray-500 truncate mt-1">
                     {tPriceRange(hItem.priceRange, isEn)} •{' '}
-                    {typeof hItem.category === 'string' ? t.dish : hItem.category?.name || t.dish}
+                    {typeof hItem.category === 'string' ? t.dish : (typeof hItem.category?.name === 'string' ? hItem.category.name : hItem.category?.name?.vi) || t.dish}
                   </p>
                 </div>
                 <button className="px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-xl text-sm font-bold hover:bg-brand-primary/20 shrink-0">

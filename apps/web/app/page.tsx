@@ -404,7 +404,7 @@ export default function HomePage() {
           <div className="w-full max-w-2xl bg-white border border-gray-100 shadow-sm rounded-2xl flex flex-col md:flex-row overflow-hidden animate-in fade-in zoom-in duration-500">
             <div className="relative w-full md:w-56 h-56 bg-gray-100 shrink-0">
               {getFoodImageUrl(food) ? (
-                <Image src={getFoodImageUrl(food)} alt={food.name} fill className="object-cover" />
+                <Image src={getFoodImageUrl(food)} alt={food.name?.vi ?? 'Food Image'} fill className="object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
                   {t.noImage}
@@ -414,21 +414,21 @@ export default function HomePage() {
             <div className="p-6 flex flex-col justify-between flex-1">
               <div>
                 <div className="flex justify-between items-start gap-4 mb-1">
-                  <h3 className="text-xl font-bold text-gray-900 leading-tight">{food.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900 leading-tight">{food.name?.vi}</h3>
                   <span className="font-semibold text-lg text-brand-primary shrink-0">
                     {tPriceRange(food.priceRange, isEn)}
                   </span>
                 </div>
                 <div className="text-sm text-gray-500 flex items-center gap-2 mb-4">
                   <span>
-                    {typeof food.category === 'string' ? t.dish : food.category?.name || t.dish}
+                    {typeof food.category === 'string' ? t.dish : (typeof food.category?.name === 'string' ? food.category.name : food.category?.name?.vi) || t.dish}
                   </span>
                   <span>•</span>
                   <span>{t.main}</span>
                 </div>
 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {food.tags?.slice(0, 3).map((tag) => (
+                  {food.tags?.vi?.slice(0, 3).map((tag) => (
                     <span
                       key={tag}
                       className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-xs font-medium"
@@ -438,34 +438,39 @@ export default function HomePage() {
                   ))}
                 </div>
 
-                {food.description && (
-                  <p className="text-sm text-gray-600 mb-6 italic border-l-2 border-brand-primary pl-3 bg-gray-50 py-2 pr-2 rounded-r-md">
-                    {food.description}
+                {food.description?.vi && (
+                  <p className="mt-3 text-gray-500 text-sm leading-relaxed line-clamp-2 pr-4">
+                    {food.description.vi}
                   </p>
                 )}
 
-                {(food as any).ingredients && ((food as any).ingredients as any[]).length > 0 && (
-                  <div className="mb-6">
-                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
-                      {isEn ? 'Ingredients' : 'Nguyên liệu'}
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {((food as any).ingredients as any[]).slice(0, 8).map((ing: any) => (
-                        <span
-                          key={ing}
-                          className="px-2 py-1 bg-brand-surface border border-brand-border rounded text-[11px] text-gray-600"
-                        >
-                          {ing}
-                        </span>
-                      ))}
-                      {((food as any).ingredients as any[]).length > 8 && (
-                        <span className="px-2 py-1 text-[11px] text-gray-400">
-                          +{(food as any).ingredients.length - 8}
-                        </span>
-                      )}
+                {(() => {
+                  const rawIngs = (food as any).ingredients;
+                  const ings: string[] = Array.isArray(rawIngs) ? rawIngs : (rawIngs?.vi || []);
+                  if (ings.length === 0) return null;
+                  return (
+                    <div className="mb-6">
+                      <span className="text-xs font-bold text-gray-500 uppercase tracking-wider block mb-2">
+                        {isEn ? 'Ingredients' : 'Nguyên liệu'}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {ings.slice(0, 8).map((ing: any) => (
+                          <span
+                            key={ing}
+                            className="px-2 py-1 bg-brand-surface border border-brand-border rounded text-[11px] text-gray-600"
+                          >
+                            {ing}
+                          </span>
+                        ))}
+                        {ings.length > 8 && (
+                          <span className="px-2 py-1 text-[11px] text-gray-400">
+                            +{ings.length - 8}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
 
               <div className="flex items-center gap-3">
@@ -510,7 +515,7 @@ export default function HomePage() {
                   {getFoodImageUrl(hItem) && (
                     <Image
                       src={getFoodImageUrl(hItem)}
-                      alt={hItem.name}
+                      alt={hItem.name?.vi ?? 'Food'}
                       width={48}
                       height={48}
                       className="object-cover w-full h-full"
@@ -518,12 +523,12 @@ export default function HomePage() {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-semibold text-gray-900 truncate" title={hItem.name}>
-                    {hItem.name}
+                  <h4 className="text-sm font-semibold text-gray-900 truncate" title={hItem.name?.vi}>
+                    {hItem.name?.vi}
                   </h4>
                   <p className="text-xs text-gray-500 truncate mt-0.5">
                     {tPriceRange(hItem.priceRange, isEn)} •{' '}
-                    {typeof hItem.category === 'string' ? t.dish : hItem.category?.name || t.dish}
+                    {typeof hItem.category === 'string' ? t.dish : (typeof hItem.category?.name === 'string' ? hItem.category.name : hItem.category?.name?.vi) || t.dish}
                   </p>
                 </div>
                 <button className="px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-full text-xs font-bold hover:bg-brand-primary/20 shrink-0">

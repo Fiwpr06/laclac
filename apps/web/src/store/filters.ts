@@ -19,6 +19,12 @@ const initial: WebFilter = {
   allergenExclude: undefined,
   cookingStyle: undefined,
   context: undefined,
+  maxCalories: undefined,
+  minCalories: undefined,
+  difficulty: undefined,
+  maxPrepTime: undefined,
+  origin: undefined,
+  allergensFree: undefined,
 };
 
 export const useFilters = create<FilterStore>((set) => ({
