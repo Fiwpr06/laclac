@@ -57,7 +57,7 @@ export default function DownloadPage() {
         </div>
 
         {/* RIGHT SIDE - QR & Phone */}
-        <div className="w-full lg:w-[480px] shrink-0 flex flex-col items-center gap-8 order-1 lg:order-2">
+        <div className="w-full lg:w-[600px] xl:w-[640px] shrink-0 flex flex-col items-center gap-8 order-1 lg:order-2">
           <QRSection expoUrl={expoUrl} />
           
           {/* Mobile view guide (shows below QR on small screens) */}

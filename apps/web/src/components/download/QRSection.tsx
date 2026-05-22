@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { motion } from 'framer-motion';
-import { Copy, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Copy, CheckCircle2, AlertTriangle, Globe, Smartphone } from 'lucide-react';
 
 interface QRSectionProps {
   expoUrl?: string;
@@ -11,6 +11,7 @@ interface QRSectionProps {
 
 export default function QRSection({ expoUrl }: QRSectionProps) {
   const [copied, setCopied] = useState(false);
+  const webUrl = 'https://laclac-web.vercel.app/';
 
   const handleCopy = () => {
     if (expoUrl) {
@@ -27,70 +28,72 @@ export default function QRSection({ expoUrl }: QRSectionProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.5, delay: 0.2 }}
-      className="w-full max-w-md mx-auto"
+      className="w-full flex flex-col sm:flex-row gap-6 justify-center"
     >
-      <div className="relative group">
-        {/* Glow effect */}
+      {/* Mobile QR Card */}
+      <div className="relative group w-full max-w-[280px]">
         <div className="absolute -inset-1 bg-gradient-to-r from-brand-primary to-orange-400 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-        
-        {/* Glassmorphism Card */}
-        <div className="relative bg-white/80 backdrop-blur-xl border border-white/40 p-8 rounded-3xl shadow-xl flex flex-col items-center gap-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-heading font-bold text-brand-secondary">
-              Scan bằng Expo Go
-            </h2>
-            <p className="text-brand-muted text-sm">
-              Sử dụng điện thoại Android để quét
-            </p>
+        <div className="relative h-full bg-white/80 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl flex flex-col items-center justify-between gap-4">
+          <div className="text-center space-y-1">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Smartphone className="w-5 h-5 text-brand-primary" />
+              <h2 className="text-lg font-heading font-bold text-brand-secondary">Mobile App</h2>
+            </div>
+            <p className="text-brand-muted text-xs">Scan bằng Expo Go</p>
           </div>
 
-          <div className="p-4 bg-white rounded-2xl shadow-sm border border-brand-border">
+          <div className="p-3 bg-white rounded-2xl shadow-sm border border-brand-border">
             {expoUrl ? (
-              <QRCodeSVG
-                value={expoUrl}
-                size={240}
-                bgColor={"#ffffff"}
-                fgColor={"#1A1A1A"}
-                level={"H"}
-                includeMargin={false}
-              />
+              <QRCodeSVG value={expoUrl} size={160} bgColor={"#ffffff"} fgColor={"#1A1A1A"} level={"H"} includeMargin={false} />
             ) : (
-              <div className="w-[240px] h-[240px] flex items-center justify-center bg-gray-50 rounded-xl text-center p-4">
-                <span className="text-brand-muted text-sm font-medium">
-                  Expo URL chưa được cấu hình
-                </span>
+              <div className="w-[160px] h-[160px] flex items-center justify-center bg-gray-50 rounded-xl text-center p-4">
+                <span className="text-brand-muted text-xs font-medium">Chưa cấu hình</span>
               </div>
             )}
           </div>
 
-          {expoUrl && (
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-2 px-5 py-2.5 bg-gray-50 hover:bg-gray-100 border border-brand-border rounded-full text-brand-secondary font-medium transition-colors text-sm"
-            >
-              {copied ? (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  <span className="text-green-600">Đã copy URL</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4 text-brand-muted" />
-                  <span>Copy Expo URL</span>
-                </>
-              )}
-            </button>
-          )}
+          <div className="flex flex-col w-full gap-2">
+            {expoUrl && (
+              <button onClick={handleCopy} className="flex items-center justify-center gap-2 w-full py-2 bg-gray-50 hover:bg-gray-100 border border-brand-border rounded-full text-brand-secondary font-medium transition-colors text-xs">
+                {copied ? (
+                  <><CheckCircle2 className="w-4 h-4 text-green-500" /><span className="text-green-600">Đã copy</span></>
+                ) : (
+                  <><Copy className="w-4 h-4 text-brand-muted" /><span>Copy URL</span></>
+                )}
+              </button>
+            )}
 
-          {isLocalIp && (
-            <div className="flex items-start gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl w-full">
-              <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-orange-700">
-                <span className="font-semibold block mb-1">Cảnh báo mạng cục bộ</span>
-                Điện thoại và máy tính phải kết nối cùng chung một mạng WiFi để tải ứng dụng.
-              </p>
+            {isLocalIp && (
+              <div className="flex items-start gap-1.5 p-2 bg-orange-50 border border-orange-100 rounded-lg w-full">
+                <AlertTriangle className="w-4 h-4 text-orange-500 shrink-0" />
+                <p className="text-[10px] text-orange-700 leading-tight">Cần chung WiFi để quét.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Website QR Card */}
+      <div className="relative group w-full max-w-[280px]">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-3xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+        <div className="relative h-full bg-white/80 backdrop-blur-xl border border-white/40 p-6 rounded-3xl shadow-xl flex flex-col items-center justify-between gap-4">
+          <div className="text-center space-y-1">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Globe className="w-5 h-5 text-blue-500" />
+              <h2 className="text-lg font-heading font-bold text-brand-secondary">Website</h2>
             </div>
-          )}
+            <p className="text-brand-muted text-xs">Truy cập trên trình duyệt</p>
+          </div>
+
+          <div className="p-3 bg-white rounded-2xl shadow-sm border border-brand-border">
+            <QRCodeSVG value={webUrl} size={160} bgColor={"#ffffff"} fgColor={"#1A1A1A"} level={"H"} includeMargin={false} />
+          </div>
+          
+          <div className="flex items-center justify-center w-full pt-2">
+            <a href={webUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-medium text-blue-600 hover:text-blue-700 hover:underline break-all text-center">
+              laclac-web.vercel.app
+            </a>
+          </div>
         </div>
       </div>
     </motion.div>
