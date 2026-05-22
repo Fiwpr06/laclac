@@ -20,6 +20,7 @@ export const applyContextRules = (
         next.priceRange = { $in: ['medium', 'expensive'] };
       }
       next.contextTags = 'date';
+      next.allergens = { $nin: ['shrimp_paste', 'fermented_shrimp_paste'] };
       break;
     }
     case 'group': {
@@ -34,6 +35,7 @@ export const applyContextRules = (
     case 'office': {
       next.mealTypes = 'lunch';
       next.cookingStyle = { $ne: 'soup' };
+      next['recipe.prepTimeMinutes'] = { $lte: 15 };
       break;
     }
     default:

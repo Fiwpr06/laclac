@@ -26,19 +26,22 @@ export class CategoriesService {
   }
 
   async create(dto: CreateCategoryDto): Promise<unknown> {
-    const name = dto.name.trim();
-    if (!name) {
+    const nameVi = dto.name?.vi?.trim();
+    if (!nameVi) {
       throw new BadRequestException('Ten category khong hop le');
     }
+    dto.name.vi = nameVi;
+    if (dto.name.en) {
+      dto.name.en = dto.name.en.trim();
+    }
 
-    const existing = await this.categoryModel.findOne({ name }).lean().exec();
+    const existing = await this.categoryModel.findOne({ 'name.vi': nameVi }).lean().exec();
     if (existing) {
       throw new ConflictException('Category da ton tai');
     }
 
     const created = await this.categoryModel.create({
       ...dto,
-      name,
       icon: dto.icon?.trim() || undefined,
       sortOrder: dto.sortOrder ?? 0,
       isActive: dto.isActive ?? true,
@@ -60,14 +63,19 @@ export class CategoriesService {
     const updateData: Record<string, unknown> = { ...dto };
 
     if (dto.name !== undefined) {
-      const name = dto.name.trim();
-      if (!name) {
+      const nameVi = dto.name.vi?.trim();
+      if (!nameVi) {
         throw new BadRequestException('Ten category khong hop le');
       }
 
-      if (name !== existing.name) {
+      dto.name.vi = nameVi;
+      if (dto.name.en) {
+        dto.name.en = dto.name.en.trim();
+      }
+
+      if (nameVi !== existing.name.vi) {
         const duplicate = await this.categoryModel
-          .findOne({ name, _id: { $ne: categoryId } })
+          .findOne({ 'name.vi': nameVi, _id: { $ne: categoryId } })
           .lean()
           .exec();
         if (duplicate) {
@@ -75,7 +83,7 @@ export class CategoriesService {
         }
       }
 
-      updateData['name'] = name;
+      updateData['name'] = dto.name;
     }
 
     if (dto.icon !== undefined) {

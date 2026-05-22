@@ -145,7 +145,7 @@ export class FoodsService {
   }
 
   async create(dto: CreateFoodDto): Promise<Food> {
-    const nameSlug = toSlug(dto.name);
+    const nameSlug = toSlug(dto.name.vi);
 
     const existing = await this.foodModel.findOne({ nameSlug }).lean().exec();
     if (existing) {
@@ -195,8 +195,8 @@ export class FoodsService {
 
     const updateData: Record<string, any> = { ...dto };
 
-    if (dto.name && dto.name !== existing.name) {
-      const slug = toSlug(dto.name);
+    if (dto.name && dto.name.vi !== existing.name?.vi) {
+      const slug = toSlug(dto.name.vi);
       const duplicate = await this.foodModel
         .findOne({ nameSlug: slug, _id: { $ne: foodId } })
         .lean()
@@ -340,6 +340,39 @@ export class FoodsService {
 
     if (filters.allergenExclude && filters.allergenExclude.length > 0) {
       query.allergens = { $nin: filters.allergenExclude };
+    }
+
+    if (filters.allergensFree && filters.allergensFree.length > 0) {
+      if (!query.allergens) {
+        query.allergens = { $nin: filters.allergensFree };
+      } else {
+        (query.allergens as any).$nin = Array.from(
+          new Set([...((query.allergens as any).$nin || []), ...filters.allergensFree])
+        );
+      }
+    }
+
+    if (filters.maxCalories !== undefined || filters.minCalories !== undefined) {
+      query.caloriesPerServing = {};
+      if (filters.maxCalories !== undefined) {
+        query.caloriesPerServing.$lte = filters.maxCalories;
+      }
+      if (filters.minCalories !== undefined) {
+        query.caloriesPerServing.$gte = filters.minCalories;
+      }
+    }
+
+    if (filters.difficulty && filters.difficulty.length > 0) {
+      query['recipe.difficulty'] = { $in: filters.difficulty };
+    }
+
+    if (filters.maxPrepTime !== undefined) {
+      query['recipe.prepTimeMinutes'] = { $lte: filters.maxPrepTime };
+    }
+
+    if (filters.origin && filters.origin.length > 0) {
+      const originRegexes = filters.origin.map(o => new RegExp(o, 'i'));
+      andConditions.push({ origin: { $in: originRegexes } });
     }
 
     if (andConditions.length > 0) {
