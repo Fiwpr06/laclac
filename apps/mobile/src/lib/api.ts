@@ -19,6 +19,12 @@ export type MobileFilter = {
   allergenExclude?: string[];
   cookingStyle?: CookingStyle;
   context?: ContextTag;
+  maxCalories?: number;
+  minCalories?: number;
+  difficulty?: string[];
+  maxPrepTime?: number;
+  origin?: string[];
+  allergensFree?: string[];
 };
 
 export type ActionFilterSnapshot = {
@@ -33,11 +39,11 @@ export type ActionFilterSnapshot = {
 
 export type FoodItem = {
   _id: string;
-  name: string;
-  description?: string;
+  name: { vi: string; en?: string };
+  description?: { vi: string; en?: string };
   images?: string[];
   thumbnailImage?: string;
-  category?: string | { _id?: string; name?: string };
+  category?: string | { _id?: string; name?: string | { vi: string; en?: string } };
   mealTypes?: MealType[];
   priceRange?: PriceRange;
   priceMin?: number;
@@ -46,7 +52,7 @@ export type FoodItem = {
   cookingStyle?: CookingStyle;
   dietTags?: DietTag[];
   allergens?: string[];
-  tags?: string[];
+  tags?: { vi: string[]; en?: string[] };
   origin?: string;
 };
 

@@ -3,20 +3,19 @@ import { Image, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { FoodItem } from '../lib/api';
+import { tPriceRange, tCookingStyle } from '../lib/i18n';
+import { useSettingsStore } from '../store/settings-store';
 
 type Props = {
   food: FoodItem;
 };
 
-const priceLabelMap: Record<'cheap' | 'medium' | 'expensive', string> = {
-  cheap: '$ - Tiết kiệm',
-  medium: '$$ - Vừa phải',
-  expensive: '$$$ - Thoải mái',
-};
 
 const FoodCardComponent = ({ food }: Props) => {
+  const { language } = useSettingsStore();
+  const isEn = language === 'en';
   const image = food.thumbnailImage || food.images?.[0];
-  const priceLabel = food.priceRange ? priceLabelMap[food.priceRange] : undefined;
+  const priceLabel = food.priceRange ? tPriceRange(food.priceRange, isEn) : undefined;
 
   return (
     <View style={styles.card}>
@@ -36,13 +35,13 @@ const FoodCardComponent = ({ food }: Props) => {
             </View>
           ) : null}
           <View style={styles.tagsContainer}>
-            {food.cookingStyle ? <Text style={styles.tagChip}>{food.cookingStyle}</Text> : null}
+            {food.cookingStyle ? <Text style={styles.tagChip}>{tCookingStyle(food.cookingStyle, isEn)}</Text> : null}
           </View>
         </View>
 
-        <Text style={styles.name}>{food.name}</Text>
+        <Text style={styles.name}>{food.name?.vi}</Text>
         <Text style={styles.description} numberOfLines={3}>
-          {food.description || 'Món ngon cân bằng và hấp dẫn, phù hợp cho bữa ăn của bạn.'}
+          {food.description?.vi || 'Món ngon cân bằng và hấp dẫn, phù hợp cho bữa ăn của bạn.'}
         </Text>
 
         <View style={styles.actionRow}>

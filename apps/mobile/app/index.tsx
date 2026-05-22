@@ -88,7 +88,7 @@ export default function ShakeScreen() {
           historyApi.add(
             {
               foodId: res.food._id,
-              foodName: res.food.name,
+              foodName: res.food.name?.vi || '',
               foodImage: res.food.thumbnailImage ?? res.food.images?.[0],
               priceRange: res.food.priceRange,
               origin: res.food.origin,
@@ -211,7 +211,7 @@ export default function ShakeScreen() {
                   </View>
                 )}
                 <Text style={styles.historyName} numberOfLines={1}>
-                  {item.name}
+                  {item.name?.vi}
                 </Text>
                 <Text style={styles.historyMeta} numberOfLines={1}>
                   $ • {item.origin || 'Vietnamese'}

@@ -26,10 +26,10 @@ export default function HistoryScreen() {
       />
       <View style={styles.foodInfo}>
         <Text style={styles.foodName} numberOfLines={1}>
-          {item.name}
+          {typeof item.name === 'string' ? item.name : item.name?.vi}
         </Text>
         <Text style={styles.foodDesc} numberOfLines={2}>
-          {item.description || 'Không có mô tả'}
+          {typeof item.description === 'string' ? item.description : item.description?.vi || 'Không có mô tả'}
         </Text>
       </View>
     </Pressable>

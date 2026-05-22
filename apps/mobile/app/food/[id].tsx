@@ -23,6 +23,7 @@ import { useShakeDetector } from '../../src/hooks/use-shake-detector';
 import { useSettingsStore } from '../../src/store/settings-store';
 import { useAuthStore } from '../../src/store/auth-store';
 import { favoritesApi, historyApi } from '../../src/lib/user-api';
+import { tPriceRange, tCookingStyle } from '../../src/lib/i18n';
 
 const playSoundEffect = async (resource: any) => {
   try {
@@ -47,7 +48,7 @@ export default function FoodDetailScreen() {
 
   const { filters } = useFilterStore();
   const { addHistory } = useHistoryStore();
-  const { soundEnabled, hapticEnabled } = useSettingsStore();
+  const { soundEnabled, hapticEnabled, language } = useSettingsStore();
   const { user, accessToken } = useAuthStore();
   const insets = useSafeAreaInsets();
   const [isShaking, setIsShaking] = useState(false);
@@ -194,6 +195,7 @@ export default function FoodDetailScreen() {
   const handleFavoritePress = () => handleToggleFavorite();
 
   const isFromShake = params.from === 'shake';
+  const isEn = language === 'en';
 
   const cleanString = (str?: string | null) => {
     if (!str) return '';
@@ -206,7 +208,7 @@ export default function FoodDetailScreen() {
         {image ? <Image source={{ uri: image }} style={styles.image} /> : null}
 
         <View style={styles.headerRow}>
-          <Text style={styles.name}>{food.name}</Text>
+          <Text style={styles.name}>{food.name?.vi}</Text>
           <Pressable onPress={handleFavoritePress} style={styles.heartBtn} disabled={togglingFav}>
             {togglingFav ? (
               <ActivityIndicator color="#FF6B35" size="small" />
@@ -221,18 +223,18 @@ export default function FoodDetailScreen() {
         </View>
 
         <Text style={styles.desc}>
-          {cleanString(food.description) || 'Món ngon phù hợp với khẩu vị của bạn.'}
+          {cleanString(food.description?.vi) || 'Món ngon phù hợp với khẩu vị của bạn.'}
         </Text>
 
         <View style={styles.badges}>
           <Text style={styles.badge} numberOfLines={1}>
-            Giá: {cleanString(food.priceRange) || 'medium'}
+            Giá: {tPriceRange(food.priceRange, isEn) || 'Medium'}
           </Text>
           <Text style={styles.badge} numberOfLines={1}>
             Calo: {food.calories || 0}
           </Text>
           <Text style={styles.badge} numberOfLines={1}>
-            Nấu: {cleanString(food.cookingStyle) || 'dry'}
+            Nấu: {tCookingStyle(food.cookingStyle, isEn) || 'Dry'}
           </Text>
         </View>
 

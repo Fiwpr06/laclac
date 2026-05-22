@@ -54,6 +54,7 @@ export default function ProfileScreen() {
     largeText: isEn ? 'Larger Text' : 'Chữ Lớn Hơn',
     reduceMotion: isEn ? 'Reduce Motion' : 'Giảm Chuyển Động',
     disableConfetti: isEn ? 'Disable Confetti' : 'Tắt Pháo Hoa',
+    swipeMode: isEn ? 'Swipe Feature' : 'Tính năng Vuốt',
     version: 'Lắc Lắc v1.0.0',
   };
 
@@ -154,6 +155,11 @@ export default function ProfileScreen() {
     await syncSetting({ disableConfetti: v });
   };
 
+  const toggleSwipeMode = async (v: boolean) => {
+    settings.setSwipeModeEnabled(v);
+    await syncSetting({ swipeModeEnabled: v });
+  };
+
   const increaseTextScale = async () => {
     const next = Math.min(settings.textScale + 0.1, 1.5);
     settings.setTextScale(parseFloat(next.toFixed(1)));
@@ -245,6 +251,15 @@ export default function ProfileScreen() {
               onValueChange={toggleSound}
               trackColor={{ true: '#F8D7DA', false: '#F0F0F0' }}
               thumbColor={settings.soundEnabled ? '#E53935' : '#FFF'}
+            />
+          </View>
+          <View style={styles.toggleRow}>
+            <Text style={[styles.toggleLabel, { fontSize: baseFontSize }]}>{t.swipeMode}</Text>
+            <Switch
+              value={settings.swipeModeEnabled}
+              onValueChange={toggleSwipeMode}
+              trackColor={{ true: '#F8D7DA', false: '#F0F0F0' }}
+              thumbColor={settings.swipeModeEnabled ? '#E53935' : '#FFF'}
             />
           </View>
           <View style={styles.actionRow}>

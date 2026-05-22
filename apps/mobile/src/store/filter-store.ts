@@ -21,6 +21,12 @@ const initialFilters: MobileFilter = {
   allergenExclude: undefined,
   cookingStyle: undefined,
   context: undefined,
+  maxCalories: undefined,
+  minCalories: undefined,
+  difficulty: undefined,
+  maxPrepTime: undefined,
+  origin: undefined,
+  allergensFree: undefined,
 };
 
 export const useFilterStore = create<FilterStore>()(

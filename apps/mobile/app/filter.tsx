@@ -4,76 +4,89 @@ import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 
 import { useFilterStore } from '../src/store/filter-store';
+import { useSettingsStore } from '../src/store/settings-store';
+import {
+  tPriceRange,
+  tBudgetBucket,
+  tDishType,
+  tCuisineType,
+  tMealType,
+  tCookingStyle,
+  tDietTag,
+} from '../src/lib/i18n';
 
 type Option<T extends string> = {
   label: string;
   value: T;
 };
 
-const priceOptions: Array<Option<'cheap' | 'medium' | 'expensive'>> = [
-  { label: 'Rẻ', value: 'cheap' },
-  { label: 'Vừa', value: 'medium' },
-  { label: 'Cao', value: 'expensive' },
+const getPriceOptions = (isEn: boolean): Array<Option<'cheap' | 'medium' | 'expensive'>> => [
+  { label: tPriceRange('cheap', isEn)!, value: 'cheap' },
+  { label: tPriceRange('medium', isEn)!, value: 'medium' },
+  { label: tPriceRange('expensive', isEn)!, value: 'expensive' },
 ];
 
-const budgetOptions: Array<
-  Option<'under_30k' | 'from_30k_to_50k' | 'from_50k_to_100k' | 'over_100k'>
-> = [
-  { label: '< 30.000đ', value: 'under_30k' },
-  { label: '30k - 50k', value: 'from_30k_to_50k' },
-  { label: '50k - 100k', value: 'from_50k_to_100k' },
-  { label: '> 100.000đ', value: 'over_100k' },
+const getBudgetOptions = (
+  isEn: boolean,
+): Array<Option<'under_30k' | 'from_30k_to_50k' | 'from_50k_to_100k' | 'over_100k'>> => [
+  { label: tBudgetBucket('under_30k', isEn)!, value: 'under_30k' },
+  { label: tBudgetBucket('from_30k_to_50k', isEn)!, value: 'from_30k_to_50k' },
+  { label: tBudgetBucket('from_50k_to_100k', isEn)!, value: 'from_50k_to_100k' },
+  { label: tBudgetBucket('over_100k', isEn)!, value: 'over_100k' },
 ];
 
-const dishTypeOptions: Array<Option<'liquid' | 'dry' | 'fried_grilled'>> = [
-  { label: 'Món nước', value: 'liquid' },
-  { label: 'Món khô', value: 'dry' },
-  { label: 'Chiên / Nướng', value: 'fried_grilled' },
+const getDishTypeOptions = (isEn: boolean): Array<Option<'liquid' | 'dry' | 'fried_grilled'>> => [
+  { label: tDishType('liquid', isEn)!, value: 'liquid' },
+  { label: tDishType('dry', isEn)!, value: 'dry' },
+  { label: tDishType('fried_grilled', isEn)!, value: 'fried_grilled' },
 ];
 
-const cuisineOptions: Array<Option<'vietnamese' | 'asian' | 'european'>> = [
-  { label: 'Món Việt', value: 'vietnamese' },
-  { label: 'Món Á', value: 'asian' },
-  { label: 'Món Âu', value: 'european' },
+const getCuisineOptions = (isEn: boolean): Array<Option<'vietnamese' | 'asian' | 'european'>> => [
+  { label: tCuisineType('vietnamese', isEn)!, value: 'vietnamese' },
+  { label: tCuisineType('asian', isEn)!, value: 'asian' },
+  { label: tCuisineType('european', isEn)!, value: 'european' },
 ];
 
-const mealOptions: Array<Option<'breakfast' | 'lunch' | 'dinner' | 'snack'>> = [
-  { label: 'Sáng', value: 'breakfast' },
-  { label: 'Trưa', value: 'lunch' },
-  { label: 'Tối', value: 'dinner' },
-  { label: 'Ăn vặt', value: 'snack' },
+const getMealOptions = (isEn: boolean): Array<Option<'breakfast' | 'lunch' | 'dinner' | 'snack'>> => [
+  { label: tMealType('breakfast', isEn)!, value: 'breakfast' },
+  { label: tMealType('lunch', isEn)!, value: 'lunch' },
+  { label: tMealType('dinner', isEn)!, value: 'dinner' },
+  { label: tMealType('snack', isEn)!, value: 'snack' },
 ];
 
-const cookingStyleOptions: Array<Option<'soup' | 'dry' | 'fried' | 'grilled' | 'raw' | 'steamed'>> =
-  [
-    { label: 'Canh / Súp', value: 'soup' },
-    { label: 'Khô', value: 'dry' },
-    { label: 'Chiên Rán', value: 'fried' },
-    { label: 'Nướng', value: 'grilled' },
-    { label: 'Đồ Sống', value: 'raw' },
-    { label: 'Hấp', value: 'steamed' },
-  ];
-
-const dietOptions: Array<Option<'vegetarian' | 'vegan' | 'keto' | 'clean'>> = [
-  { label: 'Ăn Chay', value: 'vegetarian' },
-  { label: 'Thuần Chay', value: 'vegan' },
-  { label: 'Keto', value: 'keto' },
-  { label: 'Eat Clean', value: 'clean' },
+const getCookingStyleOptions = (
+  isEn: boolean,
+): Array<Option<'soup' | 'dry' | 'fried' | 'grilled' | 'raw' | 'steamed'>> => [
+  { label: tCookingStyle('soup', isEn)!, value: 'soup' },
+  { label: tCookingStyle('dry', isEn)!, value: 'dry' },
+  { label: tCookingStyle('fried', isEn)!, value: 'fried' },
+  { label: tCookingStyle('grilled', isEn)!, value: 'grilled' },
+  { label: tCookingStyle('raw', isEn)!, value: 'raw' },
+  { label: tCookingStyle('steamed', isEn)!, value: 'steamed' },
 ];
 
-const contextOptions: Array<Option<'solo' | 'date' | 'group' | 'travel' | 'office'>> = [
-  { label: 'Một mình', value: 'solo' },
-  { label: 'Hẹn hò', value: 'date' },
-  { label: 'Nhóm bạn', value: 'group' },
-  { label: 'Du lịch', value: 'travel' },
-  { label: 'Văn phòng', value: 'office' },
+const getDietOptions = (isEn: boolean): Array<Option<'vegetarian' | 'vegan' | 'keto' | 'clean'>> => [
+  { label: tDietTag('vegetarian', isEn)!, value: 'vegetarian' },
+  { label: tDietTag('vegan', isEn)!, value: 'vegan' },
+  { label: tDietTag('keto', isEn)!, value: 'keto' },
+  { label: tDietTag('clean', isEn)!, value: 'clean' },
 ];
 
-const allergens: Array<Option<string>> = [
-  { label: 'Đậu phộng', value: 'peanuts' },
-  { label: 'Hải sản có vỏ', value: 'shellfish' },
-  { label: 'Sữa', value: 'dairy' },
-  { label: 'Gluten', value: 'gluten' },
+const getContextOptions = (
+  isEn: boolean,
+): Array<Option<'solo' | 'date' | 'group' | 'travel' | 'office'>> => [
+  { label: isEn ? 'Solo' : 'Một mình', value: 'solo' },
+  { label: isEn ? 'Date' : 'Hẹn hò', value: 'date' },
+  { label: isEn ? 'Group' : 'Nhóm bạn', value: 'group' },
+  { label: isEn ? 'Travel' : 'Du lịch', value: 'travel' },
+  { label: isEn ? 'Office' : 'Văn phòng', value: 'office' },
+];
+
+const getAllergens = (isEn: boolean): Array<Option<string>> => [
+  { label: isEn ? 'Peanuts' : 'Đậu phộng', value: 'peanuts' },
+  { label: isEn ? 'Shellfish' : 'Hải sản có vỏ', value: 'shellfish' },
+  { label: isEn ? 'Dairy' : 'Sữa', value: 'dairy' },
+  { label: isEn ? 'Gluten' : 'Gluten', value: 'gluten' },
 ];
 
 const playSoundEffect = async (resource: any) => {
@@ -123,6 +136,8 @@ const Choice = <T extends string>({
 export default function FilterScreen() {
   const router = useRouter();
   const { filters, setFilter, reset } = useFilterStore();
+  const { language } = useSettingsStore();
+  const isEn = language === 'en';
 
   const handleReset = () => {
     if (reset) reset();
@@ -146,75 +161,75 @@ export default function FilterScreen() {
         <Pressable onPress={() => router.back()} style={styles.iconBtn}>
           <Ionicons name="close" size={24} color="#333" />
         </Pressable>
-        <Text style={styles.headerTitle}>Bộ Lọc Sở Thích</Text>
+        <Text style={styles.headerTitle}>{isEn ? 'Filter Preferences' : 'Bộ Lọc Sở Thích'}</Text>
         <Pressable onPress={handleReset}>
-          <Text style={styles.clearText}>Xóa Hết</Text>
+          <Text style={styles.clearText}>{isEn ? 'Clear All' : 'Xóa Hết'}</Text>
         </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Choice
-          title="Mức giá (Phân loại)"
-          options={priceOptions}
+          title={isEn ? 'Price Range' : 'Mức giá (Phân loại)'}
+          options={getPriceOptions(isEn)}
           current={filters.priceRange as any}
           onSelect={(value) => setFilter('priceRange' as any, value)}
         />
 
         <Choice
-          title="Khoảng giá (Chi tiết)"
-          options={budgetOptions}
+          title={isEn ? 'Budget' : 'Khoảng giá (Chi tiết)'}
+          options={getBudgetOptions(isEn)}
           current={filters.budgetBucket as any}
           onSelect={(value) => setFilter('budgetBucket' as any, value)}
         />
 
         <Choice
-          title="Thể loại món"
-          options={dishTypeOptions}
+          title={isEn ? 'Dish Type' : 'Thể loại món'}
+          options={getDishTypeOptions(isEn)}
           current={filters.dishType as any}
           onSelect={(value) => setFilter('dishType' as any, value)}
         />
 
         <Choice
-          title="Ẩm thực"
-          options={cuisineOptions}
+          title={isEn ? 'Cuisine' : 'Ẩm thực'}
+          options={getCuisineOptions(isEn)}
           current={filters.cuisineType as any}
           onSelect={(value) => setFilter('cuisineType' as any, value)}
         />
 
         <Choice
-          title="Cách chế biến"
-          options={cookingStyleOptions}
+          title={isEn ? 'Cooking Style' : 'Cách chế biến'}
+          options={getCookingStyleOptions(isEn)}
           current={filters.cookingStyle as any}
           onSelect={(value) => setFilter('cookingStyle' as any, value)}
         />
 
         <Choice
-          title="Bữa ăn"
-          options={mealOptions}
+          title={isEn ? 'Meal' : 'Bữa ăn'}
+          options={getMealOptions(isEn)}
           current={filters.mealType as any}
           onSelect={(value) => setFilter('mealType' as any, value)}
         />
 
         <Choice
-          title="Chế độ ăn kiêng"
-          options={dietOptions}
+          title={isEn ? 'Diet' : 'Chế độ ăn kiêng'}
+          options={getDietOptions(isEn)}
           current={filters.dietTag as any}
           onSelect={(value) => setFilter('dietTag' as any, value)}
         />
 
         <Choice
-          title="Ngữ cảnh"
-          options={contextOptions}
+          title={isEn ? 'Context' : 'Ngữ cảnh'}
+          options={getContextOptions(isEn)}
           current={filters.context as any}
           onSelect={(value) => setFilter('context' as any, value)}
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Dị Ứng / Cấm Kỵ</Text>
+          <Text style={styles.sectionTitle}>{isEn ? 'Allergies / Exclusions' : 'Dị Ứng / Cấm Kỵ'}</Text>
           <View style={styles.optionsWrap}>
-            {allergens.map((allergen, index) => {
+            {getAllergens(isEn).map((allergen, index) => {
               const isActive = (filters.allergenExclude || []).includes(allergen.value);
-              const isLast = index === allergens.length - 1;
+              const isLast = index === getAllergens(isEn).length - 1;
               return (
                 <View
                   key={allergen.value}
@@ -236,7 +251,7 @@ export default function FilterScreen() {
 
       <View style={styles.bottomBar}>
         <Pressable style={styles.applyBtn} onPress={() => router.back()}>
-          <Text style={styles.applyBtnText}>Lắc Với Bộ Lọc</Text>
+          <Text style={styles.applyBtnText}>{isEn ? 'Shake with Filter' : 'Lắc Với Bộ Lọc'}</Text>
           <Ionicons name="restaurant" size={18} color="#FFF" />
         </Pressable>
       </View>
