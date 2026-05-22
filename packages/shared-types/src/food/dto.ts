@@ -10,7 +10,7 @@ import {
   PriceRange,
   ShakeTriggerType,
 } from '../common/enums';
-import { NutritionInfo } from '../common/entities';
+import { NutritionInfo, Recipe } from '../common/entities';
 
 export interface FilterDto {
   priceRange?: PriceRange;
@@ -20,6 +20,12 @@ export interface FilterDto {
   allergenExclude?: string[];
   cookingStyle?: CookingStyle;
   context?: ContextTag;
+  maxCalories?: number;
+  minCalories?: number;
+  difficulty?: string[];
+  maxPrepTime?: number;
+  origin?: string[];
+  allergensFree?: string[];
 }
 
 export interface ShakeFilterDto extends FilterDto {
@@ -71,7 +77,10 @@ export interface CreateFoodDto {
   cookingStyle?: CookingStyle;
   dietTags?: Exclude<DietType, 'normal'>[];
   allergens?: string[];
+  recipe?: Recipe;
   calories?: number;
+  caloriesPerServing?: number;
+  servingSize?: string;
   nutritionInfo?: NutritionInfo;
   ingredients: string[];
   tags?: string[];

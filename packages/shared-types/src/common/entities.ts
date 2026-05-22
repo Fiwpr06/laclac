@@ -15,9 +15,23 @@ import {
   UserRole,
 } from './enums';
 
+export interface LocalizedString {
+  vi: string;
+  en: string;
+}
+
+export interface LocalizedArray {
+  vi: string[];
+  en: string[];
+}
+
 export interface DietPreferences {
   type: DietType;
   allergies: string[];
+}
+
+export interface UserSettings {
+  swipeModeEnabled: boolean;
 }
 
 export interface User {
@@ -27,6 +41,7 @@ export interface User {
   passwordHash?: string;
   role: UserRole;
   dietPreferences: DietPreferences;
+  settings?: UserSettings;
   avatar?: string;
   isActive: boolean;
   createdAt: string;
@@ -40,11 +55,18 @@ export interface NutritionInfo {
   fiber?: number;
 }
 
+export interface Recipe {
+  steps: LocalizedArray;
+  prepTimeMinutes?: number;
+  cookTimeMinutes?: number;
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
 export interface Food {
   _id: string;
-  name: string;
+  name: LocalizedString;
   nameSlug: string;
-  description?: string;
+  description?: LocalizedString;
   images: string[];
   thumbnailImage?: string;
   category?: string;
@@ -55,10 +77,13 @@ export interface Food {
   cookingStyle?: CookingStyle;
   dietTags: Exclude<DietType, 'normal'>[];
   allergens: string[];
+  recipe?: Recipe;
   calories?: number;
+  caloriesPerServing?: number;
+  servingSize?: LocalizedString;
   nutritionInfo?: NutritionInfo;
-  ingredients: string[];
-  tags: string[];
+  ingredients: LocalizedArray;
+  tags: LocalizedArray;
   origin?: string;
   contextTags: ContextTag[];
   popularityScore: number;
