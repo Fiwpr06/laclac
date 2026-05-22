@@ -101,8 +101,18 @@ cp .env.example .env
 
 - MONGODB_URI
 - REDIS_URL
-- JWT_SECRET / JWT_REFRESH_SECRET
+- JWT_SECRET / JWT_REFRESH_SECRET (Bắt buộc phải cài đặt trên Production)
 - CLOUDINARY\_\* (nếu dùng upload thật)
+
+## Bản cập nhật Production-Ready (P0 Fixes)
+
+- **Cơ sở dữ liệu:** Đã bổ sung Compound Indexes gốc trong `FoodSchema` (Context, Giá, Chế độ ăn). Sẵn sàng Scale O(logN) cho API lấy món ăn ngẫu nhiên.
+- **Bảo mật (Security):**
+  - Khắc phục lỗ hổng Next.js SSRF bằng thay thế hostname cụ thể vào cấu hình Image Caching.
+  - Fix Fail-Fast Authentication: Ném Error làm sập luồng Node.js khi khởi chạy mà không có khóa bí mật (JWT) thay vì Fallback giả mạo trên Server.
+- **Độ ổn định Web:** Fix React Hydration Mismatch bằng Hook (`useEffect`) thay vì gọi Web Storage Global trực tiếp.
+- **Microservices:** Gỡ giới hạn Rate Limiting nội tại của `@nestjs/throttler` (lưu biến ở RAM mỗi Instance Node). Nhường cho Redis hoặc Gateway nhằm Horizontal Scale mượt hơn.
+- **Giao tiếp Dữ liệu:** Gỡ bỏ các `Promise<unknown>` hay `any`, Type-safe 100% Data Transfer Object khi truy vấn MongoDB. Lỗi Refresh Token ngắt chain đăng nhập của App Di Dộng đã được sửa.
 
 ## Chạy bằng Docker
 
