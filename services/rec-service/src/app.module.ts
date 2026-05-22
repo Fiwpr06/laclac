@@ -2,9 +2,7 @@ import path from 'node:path';
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 import { RecommendationsModule } from './recommendations';
 
@@ -18,12 +16,6 @@ import { RecommendationsModule } from './recommendations';
         path.resolve(__dirname, '../../../.env'),
       ],
     }),
-    ThrottlerModule.forRoot([
-      {
-        ttl: 60_000,
-        limit: 1000,
-      },
-    ]),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
@@ -32,11 +24,6 @@ import { RecommendationsModule } from './recommendations';
     }),
     RecommendationsModule,
   ],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: ThrottlerGuard,
-    },
-  ],
+  providers: [],
 })
 export class AppModule {}
