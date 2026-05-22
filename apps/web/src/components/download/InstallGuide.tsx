@@ -2,19 +2,19 @@
 
 import { motion } from 'framer-motion';
 
-export default function ExpoGuide() {
+export default function InstallGuide() {
   const steps = [
     {
-      title: 'Tải Expo Go',
-      description: 'Tải ứng dụng Expo Go trên Google Play cho điện thoại Android của bạn.',
+      title: 'Tải file APK',
+      description: 'Nhấn nút Tải file APK hoặc quét mã QR bằng điện thoại Android để tải file về máy.',
     },
     {
-      title: 'Mở Expo Go',
-      description: 'Mở ứng dụng vừa tải và đăng nhập nếu cần thiết.',
+      title: 'Cấp quyền cài đặt',
+      description: 'Nếu điện thoại cảnh báo, hãy vào Cài đặt > Bảo mật và bật "Cho phép cài đặt từ nguồn không xác định".',
     },
     {
-      title: 'Quét mã QR',
-      description: 'Sử dụng tính năng quét mã trong Expo Go để quét mã QR bên cạnh và chạy ứng dụng Lắc Lắc.',
+      title: 'Cài đặt & Trải nghiệm',
+      description: 'Mở file APK vừa tải xuống và tiến hành cài đặt để bắt đầu tìm món ăn ngon với Lắc Lắc!',
     },
   ];
 
@@ -26,7 +26,7 @@ export default function ExpoGuide() {
       className="mt-8 space-y-6"
     >
       <h3 className="text-xl font-heading font-bold text-brand-secondary">
-        Hướng dẫn sử dụng
+        Hướng dẫn cài đặt
       </h3>
       <div className="flex flex-col gap-5">
         {steps.map((step, index) => (
