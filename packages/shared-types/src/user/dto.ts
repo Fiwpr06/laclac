@@ -9,3 +9,7 @@ export interface UpdateProfileDto {
   avatar?: string;
   name?: string;
 }
+
+export interface UpdateSettingsDto {
+  swipeModeEnabled?: boolean;
+}

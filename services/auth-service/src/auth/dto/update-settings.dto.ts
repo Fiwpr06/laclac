@@ -33,4 +33,9 @@ export class UpdateSettingsDto {
   @Min(0.8)
   @Max(1.5)
   textScale?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  swipeModeEnabled?: boolean;
 }

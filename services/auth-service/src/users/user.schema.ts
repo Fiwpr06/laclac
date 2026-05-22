@@ -35,6 +35,9 @@ export class UserSettings {
 
   @Prop({ default: 1 })
   textScale!: number;
+
+  @Prop({ default: false })
+  swipeModeEnabled!: boolean;
 }
 
 @Schema({ timestamps: true, collection: 'users' })
