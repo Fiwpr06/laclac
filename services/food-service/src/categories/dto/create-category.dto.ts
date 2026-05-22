@@ -1,13 +1,25 @@
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsOptional, IsString, Min, ValidateNested } from 'class-validator';
 
 const CATEGORY_TYPES = ['cuisine', 'meal_type', 'diet'] as const;
 
-export class CreateCategoryDto {
+export class LocalizedTextDto {
   @ApiProperty()
   @IsString()
-  name!: string;
+  vi!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  en?: string;
+}
+
+export class CreateCategoryDto {
+  @ApiProperty({ type: LocalizedTextDto })
+  @ValidateNested()
+  @Type(() => LocalizedTextDto)
+  name!: LocalizedTextDto;
 
   @ApiProperty({ enum: CATEGORY_TYPES })
   @IsEnum(CATEGORY_TYPES)

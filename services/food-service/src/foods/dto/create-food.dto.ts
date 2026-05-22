@@ -47,15 +47,68 @@ class NutritionInfoDto {
   fiber?: number;
 }
 
-export class CreateFoodDto {
+class LocalizedTextDto {
   @ApiProperty()
   @IsString()
-  name!: string;
+  vi!: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  description?: string;
+  en?: string;
+}
+
+class LocalizedArrayDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  vi!: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  en?: string[];
+}
+
+class RecipeDto {
+  @ApiProperty({ type: LocalizedArrayDto })
+  @ValidateNested()
+  @Type(() => LocalizedArrayDto)
+  steps!: LocalizedArrayDto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  prepTimeMinutes?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  cookTimeMinutes?: number;
+
+  @ApiPropertyOptional({ enum: ['easy', 'medium', 'hard'] })
+  @IsOptional()
+  @IsEnum(['easy', 'medium', 'hard'])
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
+
+export class CreateFoodDto {
+  @ApiProperty({ type: LocalizedTextDto })
+  @ValidateNested()
+  @Type(() => LocalizedTextDto)
+  name!: LocalizedTextDto;
+
+  @ApiPropertyOptional({ type: LocalizedTextDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocalizedTextDto)
+  description?: LocalizedTextDto;
 
   @ApiPropertyOptional({ type: [String] })
   @IsOptional()
@@ -113,6 +166,12 @@ export class CreateFoodDto {
   @IsString({ each: true })
   allergens?: string[];
 
+  @ApiPropertyOptional({ type: RecipeDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RecipeDto)
+  recipe?: RecipeDto;
+
   @ApiPropertyOptional()
   @IsOptional()
   @Type(() => Number)
@@ -120,22 +179,35 @@ export class CreateFoodDto {
   @Min(0)
   calories?: number;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  caloriesPerServing?: number;
+
+  @ApiPropertyOptional({ type: LocalizedTextDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => LocalizedTextDto)
+  servingSize?: LocalizedTextDto;
+
   @ApiPropertyOptional({ type: NutritionInfoDto })
   @IsOptional()
   @ValidateNested()
   @Type(() => NutritionInfoDto)
   nutritionInfo?: NutritionInfoDto;
 
-  @ApiProperty({ type: [String] })
-  @IsArray()
-  @IsString({ each: true })
-  ingredients!: string[];
+  @ApiProperty({ type: LocalizedArrayDto })
+  @ValidateNested()
+  @Type(() => LocalizedArrayDto)
+  ingredients!: LocalizedArrayDto;
 
-  @ApiPropertyOptional({ type: [String] })
+  @ApiPropertyOptional({ type: LocalizedArrayDto })
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  tags?: string[];
+  @ValidateNested()
+  @Type(() => LocalizedArrayDto)
+  tags?: LocalizedArrayDto;
 
   @ApiPropertyOptional()
   @IsOptional()

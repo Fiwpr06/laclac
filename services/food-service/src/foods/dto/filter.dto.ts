@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
-import { IsArray, IsEnum, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 const PRICE_RANGES = ['cheap', 'medium', 'expensive'] as const;
 const BUDGET_BUCKETS = ['under_30k', 'from_30k_to_50k', 'from_50k_to_100k', 'over_100k'] as const;
@@ -69,6 +69,66 @@ export class FilterDto {
   @IsOptional()
   @IsEnum(CONTEXT_VALUES)
   context?: (typeof CONTEXT_VALUES)[number];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxCalories?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  minCalories?: number;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.length > 0) {
+      return value.split(',').map((v) => v.trim());
+    }
+    return undefined;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  difficulty?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  maxPrepTime?: number;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.length > 0) {
+      return value.split(',').map((v) => v.trim());
+    }
+    return undefined;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  origin?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.length > 0) {
+      return value.split(',').map((v) => v.trim());
+    }
+    return undefined;
+  })
+  @IsArray()
+  @IsString({ each: true })
+  allergensFree?: string[];
 }
 
 export class FoodsQueryDto extends FilterDto {

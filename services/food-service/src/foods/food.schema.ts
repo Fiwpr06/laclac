@@ -4,6 +4,39 @@ import { HydratedDocument, Types } from 'mongoose';
 export type FoodDocument = HydratedDocument<Food>;
 
 @Schema({ _id: false })
+export class LocalizedText {
+  @Prop({ type: String, required: true })
+  vi!: string;
+
+  @Prop({ type: String, default: '' })
+  en!: string;
+}
+
+@Schema({ _id: false })
+export class LocalizedArray {
+  @Prop({ type: [String], default: [] })
+  vi!: string[];
+
+  @Prop({ type: [String], default: [] })
+  en!: string[];
+}
+
+@Schema({ _id: false })
+export class Recipe {
+  @Prop({ type: LocalizedArray, default: { vi: [], en: [] } })
+  steps!: LocalizedArray;
+
+  @Prop({ min: 0 })
+  prepTimeMinutes?: number;
+
+  @Prop({ min: 0 })
+  cookTimeMinutes?: number;
+
+  @Prop({ type: String, enum: ['easy', 'medium', 'hard'], default: 'medium' })
+  difficulty?: 'easy' | 'medium' | 'hard';
+}
+
+@Schema({ _id: false })
 export class NutritionInfo {
   @Prop({ min: 0 })
   protein?: number;
@@ -20,14 +53,14 @@ export class NutritionInfo {
 
 @Schema({ timestamps: true, collection: 'foods' })
 export class Food {
-  @Prop({ required: true, trim: true })
-  name!: string;
+  @Prop({ type: LocalizedText, required: true })
+  name!: LocalizedText;
 
   @Prop({ required: true, unique: true, trim: true })
   nameSlug!: string;
 
-  @Prop()
-  description?: string;
+  @Prop({ type: LocalizedText })
+  description?: LocalizedText;
 
   @Prop({ type: [String], default: [] })
   images!: string[];
@@ -63,17 +96,26 @@ export class Food {
   @Prop({ type: [String], default: [] })
   allergens!: string[];
 
+  @Prop({ type: Recipe })
+  recipe?: Recipe;
+
   @Prop({ min: 0 })
   calories?: number;
+
+  @Prop({ min: 0 })
+  caloriesPerServing?: number;
+
+  @Prop({ type: LocalizedText })
+  servingSize?: LocalizedText;
 
   @Prop({ type: NutritionInfo })
   nutritionInfo?: NutritionInfo;
 
-  @Prop({ type: [String], required: true, default: [] })
-  ingredients!: string[];
+  @Prop({ type: LocalizedArray, required: true, default: { vi: [], en: [] } })
+  ingredients!: LocalizedArray;
 
-  @Prop({ type: [String], default: [] })
-  tags!: string[];
+  @Prop({ type: LocalizedArray, default: { vi: [], en: [] } })
+  tags!: LocalizedArray;
 
   @Prop()
   origin?: string;
@@ -98,5 +140,12 @@ export const FoodSchema = SchemaFactory.createForClass(Food);
 
 FoodSchema.index({ isActive: 1, popularityScore: -1, averageRating: -1 });
 FoodSchema.index({ isActive: 1, contextTags: 1 });
-FoodSchema.index({ isActive: 1, dietTags: 1, priceRange: 1 });
+FoodSchema.index({ isActive: 1, dietTags: 1, priceRange: 1, caloriesPerServing: 1 });
 FoodSchema.index({ _id: 1, isActive: 1 });
+
+FoodSchema.pre('save', function (next) {
+  if (this.caloriesPerServing && !this.calories) {
+    this.calories = this.caloriesPerServing;
+  }
+  next();
+});
