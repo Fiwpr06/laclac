@@ -17,16 +17,6 @@ import { useSettingsStore } from '../src/store/settings';
 import { useHistoryStore } from '../src/store/history';
 import { tPriceRange } from '../src/lib/translate';
 
-const getSessionId = (): string => {
-  const key = 'laclac_web_session';
-  const existing = globalThis.localStorage?.getItem(key);
-  if (existing) return existing;
-
-  const id = `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  globalThis.localStorage?.setItem(key, id);
-  return id;
-};
-
 const countActiveFilters = (filters: WebFilter): number => {
   const scalarCount = [
     filters.priceRange,
@@ -71,6 +61,18 @@ const getFoodImageUrl = (food: FoodItem): string => {
 };
 
 export default function HomePage() {
+  const [sessionId, setSessionId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const key = 'laclac_web_session';
+    let existing = window.localStorage.getItem(key);
+    if (!existing) {
+      existing = `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      window.localStorage.setItem(key, existing);
+    }
+    setSessionId(existing);
+  }, []);
+
   const { filters } = useFilters();
   const { language } = useSettingsStore();
   const isEn = language === 'en';
@@ -190,7 +192,7 @@ export default function HomePage() {
       ...filters,
       allergenExclude: filters.allergenExclude ? [...filters.allergenExclude] : undefined,
     };
-    const sessionId = getSessionId();
+    if (!sessionId) return;
 
     setLoading(true);
     try {
