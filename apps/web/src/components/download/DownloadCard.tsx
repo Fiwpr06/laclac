@@ -101,7 +101,7 @@ export default function DownloadCard({ apkUrl }: DownloadCardProps) {
                       <ShieldCheck className="w-3.5 h-3.5 text-white/70" />
                     </div>
                     <p className="text-xs text-white/60 leading-relaxed">
-                      Lưu ý: Bạn cần cấp quyền <strong className="text-white/90">"Cài đặt ứng dụng không rõ nguồn gốc"</strong> trong cài đặt Bảo mật của máy để cài file APK.
+                      Lưu ý: Bạn cần cấp quyền <strong className="text-white/90">&quot;Cài đặt ứng dụng không rõ nguồn gốc&quot;</strong> trong cài đặt Bảo mật của máy để cài file APK.
                     </p>
                   </div>
                 </div>
